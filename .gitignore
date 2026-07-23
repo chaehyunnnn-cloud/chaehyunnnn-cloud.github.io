@@ -15,6 +15,12 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+# secrets — 절대 커밋 금지 (깃 토큰 등)
+git-secret.local.json
+*.local.json
+*.secret.json
+secrets/
+.secrets/
 # editor
 .vscode/
 .idea/

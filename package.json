@@ -10,7 +10,8 @@
     "prebuild": "node scripts/make-thumbs.mjs",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "save": "node scripts/gitpush.mjs"
   },
   "dependencies": {
     "astro": "^4.16.18"
