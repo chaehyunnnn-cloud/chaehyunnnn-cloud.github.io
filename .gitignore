@@ -21,6 +21,8 @@ git-secret.local.json
 *.secret.json
 secrets/
 .secrets/
+# Claude Code 로컬 설정(개인 훅 등)
+.claude/settings.local.json
 # editor
 .vscode/
 .idea/
