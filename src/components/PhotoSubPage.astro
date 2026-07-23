@@ -1,0 +1,493 @@
+---
+import Base from "../layouts/Base.astro";
+import SnapBooks from "./SnapBooks.astro";
+import { photoSubs, photoSubById, projectsByPhotoSub } from "../data/portfolio";
+import type { Project } from "../data/portfolio";
+import { getSnapBooks } from "../lib/snap";
+import { getEtcImages } from "../lib/etc";
+import { cardSrc } from "../lib/img";
+
+interface Props {
+  subId: string;
+}
+const { subId } = Astro.props;
+const sub = photoSubById(subId)!;
+const items = projectsByPhotoSub(subId);
+const base = import.meta.env.BASE_URL;
+// 'product'는 /photography (index), 나머지는 /photography/<id>
+const subHref = (id: string) =>
+  id === "product" ? `${base}photography` : `${base}photography/${id}`;
+
+const isSnap = subId === "snap";
+const isEtc = subId === "etc";
+const isProduct = !isSnap && !isEtc; // 제품사진 (다크 마소너리)
+
+// 제품사진 타일: 제품 카드 사이사이에 텍스트 블록을 끼워 넣음.
+// ▼ 문구는 여기서 자유롭게 수정하세요 (임시 문구).
+type Tile =
+  | { kind: "card"; p: Project }
+  | { kind: "text"; variant: "lead" | "quote" | "circle"; ko: string; en: string };
+
+const TEXT_BLOCKS: Record<number, Tile> = {
+  // key = "이 인덱스의 카드 뒤에 삽입"
+  1: {
+    kind: "text",
+    variant: "lead",
+    ko: "빛과 질감으로\n제품의 온도를 기록합니다.",
+    en: "Recording a product's warmth\nthrough light and texture.",
+  },
+  5: {
+    kind: "text",
+    variant: "circle",
+    ko: "각 컷은\n하나의 장면입니다.",
+    en: "Every frame\nis a scene.",
+  },
+  8: {
+    kind: "text",
+    variant: "quote",
+    ko: "“가장 단순한 배경이\n제품을 가장 크게 만든다.”",
+    en: "“The simplest background\nmakes the product loudest.”",
+  },
+};
+
+const productTiles: Tile[] = [];
+if (isProduct) {
+  items.forEach((p, i) => {
+    productTiles.push({ kind: "card", p });
+    if (TEXT_BLOCKS[i]) productTiles.push(TEXT_BLOCKS[i]);
+  });
+}
+const snapBooks = isSnap ? await getSnapBooks() : [];
+const etcImages = isEtc ? await getEtcImages() : [];
+// 파일명 숫자(예: 7.jpg) → 같은 번호의 칸에 배치
+const etcByNum = new Map<number, (typeof etcImages)[number]>();
+for (const im of etcImages) {
+  const num = parseInt(im.name, 10);
+  if (!Number.isNaN(num)) etcByNum.set(num, im);
+}
+
+// 호버 시 프레임을 원본 비율로 키우는 크기(스테이지 대비 %, cqw 단위로 사용).
+// 스테이지 비율 1920:1080 → 세로 1% = 0.5625cqw.
+const H_PER_W = 1080 / 1920;
+function etcHover(baseH: number, ar: number) {
+  let th = Math.min(Math.max(baseH * 1.3, 42), 72); // 목표 높이(스테이지 높이 %)
+  let tw = th * H_PER_W * ar; // 목표 너비(스테이지 너비 % = cqw)
+  const TWMAX = 54;
+  if (tw > TWMAX) {
+    tw = TWMAX;
+    th = tw / (H_PER_W * ar);
+  }
+  return { hw: +tw.toFixed(2), hh: +(th * H_PER_W).toFixed(2) }; // 둘 다 cqw
+}
+
+// etc 콜라주 레이아웃(1920×1080 기준 %). 폴더에 사진을 넣으면 순서대로 각 칸에 채워집니다.
+// shape: ellipse(원/타원) · pill(캡슐) · rrect(둥근 사각형) · rrect-lg(큰 둥근 사각형)
+const ETC_LAYOUT = [
+  { n: 1,  x: 2.81,  y: 1.48,  w: 20.73, h: 17.0,  shape: "rrect" },
+  { n: 2,  x: 2.81,  y: 22.59, w: 20.73, h: 19.44, shape: "rrect" },
+  { n: 3,  x: 26.56, y: 1.48,  w: 13.75, h: 12.9,  shape: "octa" },
+  { n: 4,  x: 41.36, y: 1.48,  w: 13.85, h: 12.9,  shape: "octa" },
+  { n: 5,  x: 56.25, y: 1.48,  w: 13.12, h: 12.9,  shape: "octa" },
+  { n: 7,  x: 26.56, y: 19.81, w: 42.81, h: 59.44, shape: "rrect-lg" },
+  { n: 8,  x: 70.73, y: 6.5,   w: 6.88,  h: 17.0,  shape: "ellipse" },
+  { n: 9,  x: 78.54, y: 6.5,   w: 13.85, h: 17.0,  shape: "pill" },
+  { n: 10, x: 70.83, y: 27.41, w: 6.54,  h: 28.33, shape: "pill" },
+  { n: 11, x: 78.34, y: 27.41, w: 6.54,  h: 28.33, shape: "pill" },
+  { n: 12, x: 85.85, y: 27.41, w: 6.54,  h: 28.33, shape: "pill" },
+  { n: 13, x: 2.81,  y: 46.5,  w: 11.0,  h: 15.0,  shape: "octa" },
+  { n: 14, x: 14.41, y: 46.5,  w: 11.0,  h: 15.0,  shape: "octa" },
+  { n: 15, x: 2.5,   y: 63.89, w: 4.58,  h: 32.41, shape: "pill" },
+  { n: 16, x: 8.13,  y: 63.89, w: 4.48,  h: 32.41, shape: "pill" },
+  { n: 17, x: 13.65, y: 63.89, w: 4.48,  h: 32.41, shape: "pill" },
+  { n: 18, x: 19.58, y: 63.89, w: 4.48,  h: 32.41, shape: "pill" },
+  { n: 19, x: 70.73, y: 60.19, w: 21.66, h: 38.51, shape: "ellipse" },
+  { n: 20, x: 26.56, y: 82.0,  w: 8.16,  h: 14.5,  shape: "ellipse" },
+  { n: 21, x: 36.46, y: 82.0,  w: 8.16,  h: 14.5,  shape: "ellipse" },
+  { n: 22, x: 45.21, y: 82.0,  w: 15.21, h: 14.5,  shape: "pill" },
+  { n: 23, x: 61.6,  y: 81.0,  w: 7.77,  h: 15.5,  shape: "ellipse" },
+];
+---
+
+{
+  isEtc ? (
+    /* ── etc: 검은 배경 + 이미지 갤러리 ── */
+    <Base title={`사진 · ${sub.label.ko}`} hideChrome>
+      <section class="snap-stage">
+        <nav class="snap-top" aria-label="사진 하위 분류">
+          <a class="snap-home" href={base} aria-label="홈">
+            <span data-ko>← 홈</span>
+            <span data-en>← Home</span>
+          </a>
+          <div class="snap-tabs">
+            {photoSubs.map((s) => (
+              <a href={subHref(s.id)} aria-current={s.id === subId ? "page" : undefined}>
+                <span data-ko>{s.label.ko}</span>
+                <span data-en>{s.label.en}</span>
+              </a>
+            ))}
+          </div>
+          <button class="snap-lang" id="lang-toggle" type="button" aria-label="Language">
+            <span data-ko>EN</span>
+            <span data-en>KO</span>
+          </button>
+        </nav>
+
+        <div class="etc-stage">
+          {/* 배럴형: 상하 긴 직선 · 네 모서리 짧은 직선 대각 · 좌우 연속 타원 곡선(중앙 최대 볼록) */}
+          <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+            <defs>
+              <clipPath id="etc-octa" clipPathUnits="objectBoundingBox">
+                <path d="M0.06,0 L0.94,0 L0.97,0.12 Q1.03,0.5 0.97,0.88 L0.94,1 L0.06,1 L0.03,0.88 Q-0.03,0.5 0.03,0.12 Z" />
+              </clipPath>
+            </defs>
+          </svg>
+          {ETC_LAYOUT.map((c) => {
+            const img = etcByNum.get(c.n);
+            const hv = img ? etcHover(c.h, img.ar) : null;
+            return (
+              <div
+                class={`ecell${img ? "" : " is-empty"}`}
+                style={`left:${c.x}%;top:${c.y}%;width:${c.w}%;height:${c.h}%;${
+                  hv ? `--hw:${hv.hw};--hh:${hv.hh};` : ""
+                }`}
+              >
+                <div class={`eframe s-${c.shape}`}>
+                  {img ? <img src={img.thumb} alt={img.name} loading="lazy" /> : null}
+                </div>
+              </div>
+            );
+          })}
+          {/* 번호는 도형 바깥(위쪽)에 별도 배치 */}
+          {ETC_LAYOUT.map((c) => (
+            <span class="ecell-no" style={`left:${c.x}%;top:${c.y}%;`}>
+              {c.n}
+            </span>
+          ))}
+        </div>
+      </section>
+    </Base>
+  ) : isSnap ? (
+    /* ── 스냅사진: 검은 배경 + 책(스프레드) 그리드 ── */
+    <Base title={`사진 · ${sub.label.ko}`} hideChrome>
+      <section class="snap-stage">
+        <nav class="snap-top" aria-label="사진 하위 분류">
+          <a class="snap-home" href={base} aria-label="홈">
+            <span data-ko>← 홈</span>
+            <span data-en>← Home</span>
+          </a>
+          <div class="snap-tabs">
+            {photoSubs.map((s) => (
+              <a href={subHref(s.id)} aria-current={s.id === subId ? "page" : undefined}>
+                <span data-ko>{s.label.ko}</span>
+                <span data-en>{s.label.en}</span>
+              </a>
+            ))}
+          </div>
+          <button class="snap-lang" id="lang-toggle" type="button" aria-label="Language">
+            <span data-ko>EN</span>
+            <span data-en>KO</span>
+          </button>
+        </nav>
+
+        <p class="snap-hint">
+          <span data-ko>오른쪽 페이지를 클릭하면 다음, 왼쪽 페이지를 클릭하면 이전으로 넘어가요.</span>
+          <span data-en>Click the right page to go forward, the left page to go back.</span>
+        </p>
+
+        <SnapBooks books={snapBooks} />
+      </section>
+    </Base>
+  ) : (
+    /* ── 제품사진: 다크 배경 + 마소너리(제품 카드 + 텍스트 블록) ── */
+    <Base title={`사진 · ${sub.label.ko}`} hideChrome>
+      <section class="snap-stage prod-stage">
+        <nav class="snap-top" aria-label="사진 하위 분류">
+          <a class="snap-home" href={base} aria-label="홈">
+            <span data-ko>← 홈</span>
+            <span data-en>← Home</span>
+          </a>
+          <div class="snap-tabs">
+            {photoSubs.map((s) => (
+              <a href={subHref(s.id)} aria-current={s.id === subId ? "page" : undefined}>
+                <span data-ko>{s.label.ko}</span>
+                <span data-en>{s.label.en}</span>
+              </a>
+            ))}
+          </div>
+          <button class="snap-lang" id="lang-toggle" type="button" aria-label="Language">
+            <span data-ko>EN</span>
+            <span data-en>KO</span>
+          </button>
+        </nav>
+
+        {productTiles.length > 0 ? (
+          <div class="pmasonry">
+            {productTiles.map((t) =>
+              t.kind === "card" ? (
+                <a class="pcard" href={`${base}work/${t.p.slug}`}>
+                  <img
+                    src={cardSrc(t.p)}
+                    alt=""
+                    loading="lazy"
+                    transition:name={`photo-${t.p.slug}`}
+                  />
+                  <div class="pcard__meta">
+                    <span class="pcard__title">
+                      <span data-ko>{t.p.title.ko}</span>
+                      <span data-en>{t.p.title.en}</span>
+                    </span>
+                    {t.p.summary && (
+                      <span class="pcard__sum">
+                        <span data-ko>{t.p.summary.ko}</span>
+                        <span data-en>{t.p.summary.en}</span>
+                      </span>
+                    )}
+                  </div>
+                </a>
+              ) : (
+                <div class={`pblock pblock--${t.variant}`}>
+                  <p class="pblock__t">
+                    <span data-ko>{t.ko}</span>
+                    <span data-en>{t.en}</span>
+                  </p>
+                </div>
+              )
+            )}
+          </div>
+        ) : (
+          <p class="snap-hint" style="margin-top:40px;">
+            <span data-ko>아직 등록된 작업이 없습니다.</span>
+            <span data-en>No projects yet.</span>
+          </p>
+        )}
+      </section>
+    </Base>
+  )
+}
+
+<style is:global>
+  /* ── 스냅 페이지 (검은 배경) ─────────────────────────────── */
+  .snap-stage {
+    min-height: 100vh;
+    background: #0b0b0c;
+    color: #eaeaea;
+    padding: clamp(16px, 3vw, 34px) clamp(18px, 5vw, 64px);
+    box-sizing: border-box;
+  }
+  .snap-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: clamp(10px, 2vw, 24px);
+  }
+  .snap-home {
+    font: 13px "Space Mono", ui-monospace, monospace;
+    color: #cfcfcf;
+  }
+  .snap-home:hover { color: #fff; }
+  .snap-tabs {
+    display: flex;
+    gap: clamp(12px, 2vw, 28px);
+  }
+  .snap-tabs a {
+    font: 13px "Space Mono", ui-monospace, monospace;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #888;
+  }
+  .snap-tabs a:hover { color: #fff; }
+  .snap-tabs a[aria-current="page"] { color: #fff; font-weight: 700; }
+  .snap-lang {
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: #ddd;
+    font: 12px "Space Mono", monospace;
+    letter-spacing: 0.04em;
+    padding: 5px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .snap-lang:hover { border-color: #fff; color: #fff; }
+  .snap-hint {
+    text-align: center;
+    color: #6f6f6f;
+    font: 12px "Space Mono", ui-monospace, monospace;
+    letter-spacing: 0.04em;
+    margin: 0 0 clamp(6px, 1.5vw, 16px);
+  }
+
+  /* ── etc 콜라주 레이아웃 (1920×1080 비율 유지, 칸별 도형) ── */
+  .etc-stage {
+    position: relative;
+    width: 100%;
+    max-width: 1920px;
+    margin: clamp(10px, 2vw, 26px) auto 40px;
+    aspect-ratio: 1920 / 1080;
+    container-type: inline-size;
+  }
+  .ecell {
+    position: absolute;
+    cursor: pointer;
+  }
+  /* 실제 이미지 프레임: 칸 중앙 기준으로 자라남 */
+  .eframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    overflow: hidden;
+    background: #17181a;
+    transition:
+      width 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+      height 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+      border-radius 0.45s ease,
+      box-shadow 0.45s ease;
+  }
+  .eframe img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 항상 꽉 채움 → 여백(레터박스) 없음 */
+    display: block;
+  }
+  /* 도형 */
+  .s-ellipse { border-radius: 50%; }
+  .s-pill { border-radius: 999px; }
+  .s-rrect { border-radius: 4.5cqw; }
+  .s-rrect-lg { border-radius: 2.4cqw; }
+  /* 좌우 볼록 가로형 팔각 프레임 */
+  .s-octa { clip-path: url(#etc-octa); }
+
+  /* 번호: 각 도형의 좌상단 바깥(위쪽 여백)에 표기 */
+  .ecell-no {
+    position: absolute;
+    transform: translate(0.2cqw, -1.5cqw);
+    font-family: "Segoe UI", system-ui, "Helvetica Neue", sans-serif;
+    font-weight: 200;
+    font-size: calc(0.95cqw - 1px);
+    letter-spacing: 0.02em;
+    color: #fff;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  /* 호버: 프레임이 원본 비율로 커지며 원본 이미지가 그대로 드러남(여백 없음) */
+  .ecell:hover { z-index: 100; }
+  .ecell:hover .eframe {
+    width: calc(var(--hw, 20) * 1cqw);
+    height: calc(var(--hh, 20) * 1cqw);
+    border-radius: 10px;
+    clip-path: none; /* 호버 시 팔각 클립 해제 → 원본 전체 노출 */
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75);
+  }
+  /* 사진 없는 빈 칸은 팝업 효과 없음 (호버 자체를 안 받음) */
+  .ecell.is-empty {
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* ── 제품사진 마소너리 (다크) ─────────────────────────────── */
+  .prod-stage { padding-bottom: clamp(60px, 10vw, 120px); }
+  .pmasonry {
+    columns: 3 300px;
+    column-gap: clamp(12px, 1.4vw, 20px);
+    max-width: 1400px;
+    margin: clamp(14px, 3vw, 30px) auto 0;
+  }
+  .pcard,
+  .pblock {
+    break-inside: avoid;
+    margin-bottom: clamp(12px, 1.4vw, 20px);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* 제품 카드 */
+  .pcard {
+    position: relative;
+    display: block;
+    background: #151516;
+  }
+  .pcard img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  /* 호버 시 매트 화이트 패널이 덮이고 블랙 텍스트 표시 */
+  .pcard__meta {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 8px;
+    padding: clamp(18px, 1.8vw, 30px);
+    background: #f4f3ef; /* 매트 화이트 */
+    opacity: 0;
+    transition: opacity 0.28s ease;
+    pointer-events: none;
+  }
+  .pcard:hover .pcard__meta { opacity: 1; }
+  .pcard__title {
+    color: #111;
+    font: 800 clamp(22px, 2vw, 32px) var(--font);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .pcard__sum {
+    color: #555;
+    font: 400 clamp(12px, 0.95vw, 14px) var(--font);
+    line-height: 1.55;
+  }
+
+  /* 텍스트 블록 */
+  .pblock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(24px, 2.4vw, 40px);
+    text-align: center;
+  }
+  .pblock__t { margin: 0; white-space: pre-line; }
+  .pblock--lead {
+    background: #fff;
+    color: #111;
+    min-height: 220px;
+  }
+  .pblock--lead .pblock__t {
+    font: 600 clamp(19px, 1.7vw, 26px) var(--font);
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    text-align: left;
+    align-self: flex-start;
+  }
+  .pblock--lead { justify-content: flex-start; }
+  .pblock--quote {
+    background: #1b1b1d;
+    color: #e8e8ea;
+    border: 1px solid #2b2b2e;
+    min-height: 180px;
+  }
+  .pblock--quote .pblock__t {
+    font: 500 clamp(15px, 1.2vw, 18px) var(--font);
+    line-height: 1.55;
+  }
+  .pblock--circle {
+    background: #fff;
+    color: #111;
+    border-radius: 50%;
+    aspect-ratio: 1 / 1;
+  }
+  .pblock--circle .pblock__t {
+    font: 600 clamp(15px, 1.25vw, 19px) var(--font);
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+  }
+
+  @media (max-width: 900px) { .pmasonry { columns: 2 240px; } }
+  @media (max-width: 560px) { .pmasonry { columns: 1; } }
+</style>

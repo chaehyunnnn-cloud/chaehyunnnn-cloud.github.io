@@ -1,0 +1,216 @@
+---
+import type { Project } from "../data/portfolio";
+import { cardSrc } from "../lib/img";
+
+interface Props {
+  projects: Project[];
+}
+const { projects } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+
+<div class="cz">
+  {/* 회전 방식 선택 (아이콘 버튼) — 우측 상단 플로팅 */}
+  <div class="cz-controls" role="group" aria-label="회전 방식 선택 / Rotation mode">
+    <button class="cz-btn" type="button" data-mode="circle" aria-label="원형 회전 / Circle" title="원형">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+        <path d="M20 4 L20 8 L16 8" />
+      </svg>
+    </button>
+    <button class="cz-btn" type="button" data-mode="ellipse" aria-label="대각선 타원 / Diagonal ellipse" title="대각선 타원">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="12" cy="12" rx="9" ry="4.6" transform="rotate(-22 12 12)" />
+      </svg>
+    </button>
+    <button class="cz-btn" type="button" data-mode="coverflow" aria-label="가로 띠 / Horizontal band" title="가로 띠">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="12" x2="20" y2="12" />
+      </svg>
+    </button>
+  </div>
+
+  {/* JS가 활성화되면 is-3d, 아니면 cz-fallback(가로 스크롤)로 동작 */}
+  <div class="cz-stage cz-fallback" data-mode="coverflow" role="list" aria-label="사진 작업">
+    <div class="cz-tilt">
+      <div class="cz-ring">
+        {
+          projects.map((p) => (
+            <a
+              class="cz-card"
+              role="listitem"
+              href={`${base}work/${p.slug}`}
+              aria-label={p.title.ko}
+            >
+              <span class="cz-card__inner">
+                <img src={cardSrc(p)} alt="" loading="lazy" transition:name={`photo-${p.slug}`} />
+              </span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+
+  <p class="cz-hint">
+    <span data-ko>클릭하면 상세로 이동 · 우측 상단 아이콘으로 회전 방식 변경</span>
+    <span data-en>Hover to pause · Click to open · Switch rotation with the icons (top-right)</span>
+  </p>
+</div>
+
+<script>
+  const STORE = "cz-mode";
+  const TAU = Math.PI * 2;
+  const num = (v: string, d: number) => {
+    const x = parseFloat(v);
+    return isNaN(x) ? d : x;
+  };
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+  function setupCarousels() {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.querySelectorAll<HTMLElement>(".cz").forEach((root) => {
+      const stage = root.querySelector<HTMLElement>(".cz-stage");
+      if (!stage || stage.dataset.czReady === "1") return;
+      const cards = Array.from(stage.querySelectorAll<HTMLElement>(".cz-card"));
+      const n = cards.length;
+      if (n === 0) return;
+
+      // 모션 최소화 또는 카드가 적으면 가로 스크롤 유지, 컨트롤 숨김
+      if (reduce || n < 2) {
+        stage.classList.add("cz-fallback");
+        stage.classList.remove("is-3d");
+        const ctl = root.querySelector<HTMLElement>(".cz-controls");
+        if (ctl) ctl.style.display = "none";
+        return;
+      }
+
+      const MODES = ["circle", "ellipse", "coverflow"];
+      let mode = "coverflow";
+      try {
+        const saved = localStorage.getItem(STORE);
+        if (saved && MODES.includes(saved)) mode = saved;
+      } catch (e) {}
+
+      const ring = stage.querySelector<HTMLElement>(".cz-ring");
+
+      // 모드 = 하나의 회전 링을 바라보는 "기울기 각도". 버튼을 누르면 이 각도로 부드럽게 보간돼
+      // 화면이 새로 뜨는 게 아니라 모션이 이어지며 원이 기울어진다.
+      const PHI: Record<string, number> = {
+        circle: 0,                       // 정면 원형
+        ellipse: (58 * Math.PI) / 180,   // 비스듬히 누운 타원
+        coverflow: (84 * Math.PI) / 180, // 거의 눕혀진 가로 띠
+      };
+      // 롤(화면 평면 회전) — 타원을 대각선으로 눕히는 각도 (오른쪽이 위로)
+      const ROLL: Record<string, number> = {
+        circle: 0,
+        ellipse: (-22 * Math.PI) / 180,
+        coverflow: 0,
+      };
+
+      // 화면/CSS 변수 기반 설정값
+      let speedSec = 38, spread = 1, R = 240, cw = 120, ch = 156;
+      const measure = () => {
+        const cs = getComputedStyle(root);
+        speedSec = num(cs.getPropertyValue("--cz-speed"), 38);
+        spread = num(cs.getPropertyValue("--cz-spread"), 1);
+        const w = stage.offsetWidth || 1000;
+        cw = cards[0].offsetWidth || 120;
+        ch = cards[0].offsetHeight || 156;
+
+        // 정면 원형에서 인접 카드가 겹치지 않는 반지름 (현(chord) ≥ 카드폭 + 간격)
+        const sinHalf = Math.sin(Math.PI / n) || 0.0001;
+        const gap = cw * 0.16 * spread;
+        R = (cw + gap) / (2 * sinHalf);
+
+        // 원이 폭을 넘으면 비율 유지하며 축소. 높이는 정면 원 기준으로 고정 → 모드 전환 시 점프 없음
+        const ringScale = Math.min(1, (w - 8) / (2 * R + cw));
+        if (ring) ring.style.transform = ringScale === 1 ? "" : `scale(${ringScale.toFixed(3)})`;
+        stage.style.height = Math.round((2 * R + ch) * ringScale + 24) + "px";
+      };
+      measure();
+
+      const SMID = 0.9, SRANGE = 0.42, OMIN = 0.5;
+
+      let phase = 0, last = 0, raf = 0;
+      let dir = 1;                    // 회전 방향 (+1 / -1)
+      let phi = PHI[mode] ?? 0;       // 현재 기울기
+      let phiTarget = phi;            // 목표 기울기
+      let roll = ROLL[mode] ?? 0;     // 현재 롤(대각선)
+      let rollTarget = roll;          // 목표 롤
+
+      const place = (card: HTMLElement, i: number) => {
+        const th = (i / n) * TAU + phase;
+        const sinP = Math.sin(phi), cosP = Math.cos(phi);
+        const lx = Math.sin(th); // 링 평면 가로 (-1..1)
+        const ly = Math.cos(th); // 링 평면 세로 (-1..1)
+        const x0 = R * lx;
+        const y0 = R * ly * cosP;  // 기울수록 세로로 납작
+        // 롤(대각선) 적용 — 화면 평면에서 회전
+        const cr = Math.cos(roll), sr = Math.sin(roll);
+        const x = x0 * cr - y0 * sr;
+        const y = x0 * sr + y0 * cr;
+        const depth = ly * sinP;   // 기울수록 세로 위치가 앞/뒤 깊이로 전환
+        const t = (depth + 1) / 2; // 0(뒤)~1(앞)
+        const scale = SMID + SRANGE * depth;
+        card.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+        card.style.opacity = "1"; // 모든 이미지 불투명 (겹쳐도 반투명 없음, 앞 카드가 z-index로 덮음)
+        card.style.zIndex = String(Math.round(t * 1000));
+      };
+
+      const frame = (ts: number) => {
+        // 페이지 전환으로 화면에서 떨어지면 루프 종료 (rAF 누수 방지)
+        if (!stage.isConnected) return;
+        if (!last) last = ts;
+        const dt = ts - last;
+        last = ts;
+        // 계속 회전 (마우스를 올려도 멈추지 않음 — 호버 모션은 CSS로만)
+        phase += dir * (TAU / (speedSec * 1000)) * dt;
+        // 기울기·롤을 목표값으로 부드럽게 보간 → 버튼 누르면 각도가 모션으로 이어짐
+        const k = Math.min(1, dt * 0.006);
+        phi += (phiTarget - phi) * k;
+        roll += (rollTarget - roll) * k;
+        for (let i = 0; i < n; i++) place(cards[i], i);
+        raf = requestAnimationFrame(frame);
+      };
+
+      const applyButtons = () => {
+        stage.dataset.mode = mode;
+        root.querySelectorAll<HTMLElement>("[data-mode]").forEach((b) =>
+          b.classList.toggle("is-active", b.dataset.mode === mode)
+        );
+      };
+
+      root.querySelectorAll<HTMLElement>("[data-mode]").forEach((b) => {
+        b.addEventListener("click", () => {
+          const m = b.dataset.mode || "circle";
+          if (m === mode) {
+            // 같은(회전 중인) 버튼을 다시 누르면 반대 방향으로
+            dir = -dir;
+          } else {
+            mode = m;
+            phiTarget = PHI[mode] ?? 0;
+            rollTarget = ROLL[mode] ?? 0;
+            try { localStorage.setItem(STORE, mode); } catch (e) {}
+          }
+          applyButtons();
+        });
+      });
+
+      stage.classList.remove("cz-fallback");
+      stage.classList.add("is-3d");
+      applyButtons();
+      stage.dataset.czReady = "1";
+      raf = requestAnimationFrame(frame);
+
+      let t: number | undefined;
+      window.addEventListener("resize", () => {
+        window.clearTimeout(t);
+        t = window.setTimeout(measure, 150);
+      });
+    });
+  }
+
+  setupCarousels();
+  document.addEventListener("astro:page-load", setupCarousels);
+</script>

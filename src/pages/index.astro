@@ -1,0 +1,626 @@
+---
+import Base from "../layouts/Base.astro";
+import { categories, projectsByCategory } from "../data/portfolio";
+import { thumb } from "../lib/img";
+const base = import.meta.env.BASE_URL;
+
+const wallImg = "/images/home/blue-green-background.jpg"; // 배경 이미지 (비우면 기본 그라데이션)
+
+// 폴더(iOS 스타일)로 보여줄 카테고리 + 색
+const folders: Record<string, string> = {
+  web: "#3fa6f4", // 밝은 하늘색
+  branding: "#ff5a1f", // 쨍한 오렌지
+};
+
+function coverOf(catId: string) {
+  const items = projectsByCategory(catId);
+  return items.length ? thumb(items[0].cover) : "";
+}
+
+const n = categories.length;
+const center = (n - 1) / 2;
+const cards = categories.map((c, i) => {
+  const off = i - center;
+  return {
+    id: c.id,
+    label: c.label,
+    img: coverOf(c.id),
+    color: folders[c.id] || null,
+    off,
+    aoff: Math.abs(off),
+    i,
+  };
+});
+---
+
+<Base hideChrome description="Portfolio">
+  <section class="backdrop" style={wallImg ? `--wall:url(${wallImg})` : undefined}>
+    <div class="window">
+      {/* 좌측 상단 햄버거 메뉴 — 카테고리 열기 */}
+      <nav class="menu" aria-label="카테고리 메뉴">
+        <button class="menu__btn" id="menuBtn" type="button" aria-expanded="false" aria-label="메뉴 열기">
+          <span></span><span></span><span></span>
+        </button>
+        <ul class="menu__list">
+          <li>
+            <a href={base}><span data-ko>홈</span><span data-en>Home</span></a>
+          </li>
+          {
+            categories.map((c) => (
+              <li>
+                <a href={`${base}${c.id}`}>
+                  <span data-ko>{c.label.ko}</span>
+                  <span data-en>{c.label.en}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <button class="home-lang" id="lang-toggle" type="button" aria-label="Language">
+        <span data-ko>EN</span>
+        <span data-en>KO</span>
+      </button>
+
+      <div class="window__top">Portfolio 2026</div>
+
+      <div class="window__hero">
+        <div class="title-wrap">
+          <span class="hero-behind" aria-hidden="true"><span class="hero-C">C</span><span class="hero-o">h</span><span class="hero-eo hero-a">a</span>ehy<span class="hero-eo hero-esm">e</span><span class="hero-o">o</span>n</span>
+          <h1 class="window__title">Portfolio</h1>
+        </div>
+        <p class="window__sub">2024年 – 2026年</p>
+      </div>
+
+      <div class="deck">
+        {/* 더미 폴더 (회색, 맨 왼쪽·맨 뒤, 클릭/호버 없음) */}
+        <div
+          class="deck__card deck__folder is-dummy"
+          style="--off:-3; --aoff:3; --i:0; --z:0; --rnd:-20px; --rot:0deg"
+          aria-hidden="true"
+        >
+          <svg
+            class="folder__svg"
+            viewBox="0 0 1257.6 1059.36"
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
+          >
+            <path
+              fill="#b9bec6"
+              class="fb-back"
+              d="M1257.6,202.49c0-51.37-36.89-93.01-82.39-93.01h-540.52c-18.58,0-36.33-8.69-48.99-24.04C559.11,53.21,510.46,0,479.02,0H78.73C35.25,0,0,39.79,0,88.88v184.7s0,.05,0,.08v715.51c0,38.77,32.32,70.2,72.19,70.2h1113.21c39.88,0,72.2-31.43,72.2-70.2V283.58s0,.04,0,.07v-81.15Z"
+            ></path>
+            <path
+              class="fb-paper"
+              d="M1219.2,215.32v690.99c0,1.64-.06,3.27-.17,4.87-.6,8.54-2.79,16.64-6.27,24.02-10.84,22.99-34.24,38.91-61.34,38.91H106.18c-27.1,0-50.5-15.92-61.34-38.91-.04-.09-.08-.17-.12-.26-3.41-7.3-5.55-15.31-6.15-23.76-.11-1.6-.17-3.23-.17-4.87V215.32c0-1.19.03-2.37.09-3.53.58-11.38,3.97-22.02,9.49-31.23,11.84-19.78,33.48-33.03,58.2-33.03h1045.24c37.44,0,67.79,30.35,67.79,67.79Z"
+            ></path>
+            <path
+              fill="#d3d7dd"
+              class="fb-front"
+              d="M1257.6,273.65v715.51c0,38.77-32.32,70.2-72.2,70.2H72.19C32.32,1059.36,0,1027.94,0,989.17V273.65C0,260.49,3.73,248.18,10.21,237.66c12.61-20.49,35.65-34.2,61.98-34.2h1113.21c29.22,0,54.39,16.87,65.75,41.15,4.14,8.85,6.45,18.68,6.45,29.04Z"
+            ></path>
+          </svg>
+        </div>
+        {
+          cards.map((c) =>
+            c.color ? (
+              <a
+                class:list={["deck__card", "deck__folder", c.id === "web" && "is-front", c.id === "branding" && "is-back"]}
+                href={`${base}${c.id}`}
+                style={`--off:${c.off}; --aoff:${c.aoff}; --i:${c.i}; --col:${c.color}${c.id === "web" ? "; --z:60; --rnd:-30px; --rot:-7deg" : c.id === "branding" ? "; --z:1; --rnd:0px; --rot:9deg" : ""}`}
+                aria-label={c.label.en}
+              >
+                <svg
+                  class="folder__svg"
+                  viewBox="0 0 1257.6 1059.36"
+                  preserveAspectRatio="xMidYMid meet"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <linearGradient id={`g-front-${c.id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color={`color-mix(in srgb, ${c.color} 78%, #fff)`} />
+                      <stop offset="1" stop-color={`color-mix(in srgb, ${c.color} 84%, #000)`} />
+                    </linearGradient>
+                    <linearGradient id={`g-back-${c.id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color={`color-mix(in srgb, ${c.color} 96%, #fff)`} />
+                      <stop offset="0.26" stop-color={`color-mix(in srgb, ${c.color} 70%, #000)`} />
+                      <stop offset="1" stop-color={`color-mix(in srgb, ${c.color} 70%, #000)`} />
+                    </linearGradient>
+                    {/* 가장자리에서 안쪽으로 들어오는 흰색 이너 글로우 */}
+                    <filter id={`inner-${c.id}`} x="-5%" y="-5%" width="110%" height="110%">
+                      <feComponentTransfer in="SourceAlpha" result="inv">
+                        <feFuncA type="table" tableValues="1 0" />
+                      </feComponentTransfer>
+                      <feGaussianBlur in="inv" stdDeviation="30" result="blur" />
+                      <feFlood flood-color="#cdeeff" flood-opacity="0.95" result="col" />
+                      <feComposite in="col" in2="blur" operator="in" result="glow" />
+                      <feComposite in="glow" in2="SourceAlpha" operator="in" result="iglow" />
+                      <feMerge>
+                        <feMergeNode in="SourceGraphic" />
+                        <feMergeNode in="iglow" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <path
+                    fill={`url(#g-back-${c.id})`}
+                    class="fb-back"
+                    d="M1257.6,202.49c0-51.37-36.89-93.01-82.39-93.01h-540.52c-18.58,0-36.33-8.69-48.99-24.04C559.11,53.21,510.46,0,479.02,0H78.73C35.25,0,0,39.79,0,88.88v184.7s0,.05,0,.08v715.51c0,38.77,32.32,70.2,72.19,70.2h1113.21c39.88,0,72.2-31.43,72.2-70.2V283.58s0,.04,0,.07v-81.15Z"
+                  ></path>
+                  {c.id === "web" ? (
+                    <>
+                      {/* 뒷장 속지 — 더 높이·사선으로 올라오는 리스트 종이 */}
+                      <g class="fb-sheet-back">
+                        <path
+                          fill="#fbfbfb"
+                          d="M1219.2,215.32v690.99c0,1.64-.06,3.27-.17,4.87-.6,8.54-2.79,16.64-6.27,24.02-10.84,22.99-34.24,38.91-61.34,38.91H106.18c-27.1,0-50.5-15.92-61.34-38.91-.04-.09-.08-.17-.12-.26-3.41-7.3-5.55-15.31-6.15-23.76-.11-1.6-.17-3.23-.17-4.87V215.32c0-1.19.03-2.37.09-3.53.58-11.38,3.97-22.02,9.49-31.23,11.84-19.78,33.48-33.03,58.2-33.03h1045.24c37.44,0,67.79,30.35,67.79,67.79Z"
+                        ></path>
+                        <text class="sheet-list-title" x="150" y="360">{c.label.en}</text>
+                        <g stroke="#e6e8ec" stroke-width="2">
+                          <line x1="150" y1="430" x2="1090" y2="430" />
+                          <line x1="150" y1="545" x2="1090" y2="545" />
+                          <line x1="150" y1="660" x2="1090" y2="660" />
+                        </g>
+                        <text class="sheet-list" x="150" y="505">Product detail page</text>
+                        <text class="sheet-list" x="150" y="620">Promotion contents</text>
+                        <text class="sheet-list" x="150" y="735">Web App</text>
+                      </g>
+                      {/* 앞장 속지 — 빈 종이, 살짝만 올라옴 */}
+                      <g class="fb-paper">
+                        <path
+                          fill="#f5f7f9"
+                          d="M1219.2,215.32v690.99c0,1.64-.06,3.27-.17,4.87-.6,8.54-2.79,16.64-6.27,24.02-10.84,22.99-34.24,38.91-61.34,38.91H106.18c-27.1,0-50.5-15.92-61.34-38.91-.04-.09-.08-.17-.12-.26-3.41-7.3-5.55-15.31-6.15-23.76-.11-1.6-.17-3.23-.17-4.87V215.32c0-1.19.03-2.37.09-3.53.58-11.38,3.97-22.02,9.49-31.23,11.84-19.78,33.48-33.03,58.2-33.03h1045.24c37.44,0,67.79,30.35,67.79,67.79Z"
+                        ></path>
+                      </g>
+                    </>
+                  ) : c.id === "branding" ? (
+                    <g class="fb-paper">
+                      <path
+                        fill="#f5f7f9"
+                        d="M1219.2,215.32v690.99c0,1.64-.06,3.27-.17,4.87-.6,8.54-2.79,16.64-6.27,24.02-10.84,22.99-34.24,38.91-61.34,38.91H106.18c-27.1,0-50.5-15.92-61.34-38.91-.04-.09-.08-.17-.12-.26-3.41-7.3-5.55-15.31-6.15-23.76-.11-1.6-.17-3.23-.17-4.87V215.32c0-1.19.03-2.37.09-3.53.58-11.38,3.97-22.02,9.49-31.23,11.84-19.78,33.48-33.03,58.2-33.03h1045.24c37.44,0,67.79,30.35,67.79,67.79Z"
+                      ></path>
+                      <text class="sheet-title" x="130" y="300">Branding</text>
+                    </g>
+                  ) : (
+                    <path
+                      class="fb-paper"
+                      d="M1219.2,215.32v690.99c0,1.64-.06,3.27-.17,4.87-.6,8.54-2.79,16.64-6.27,24.02-10.84,22.99-34.24,38.91-61.34,38.91H106.18c-27.1,0-50.5-15.92-61.34-38.91-.04-.09-.08-.17-.12-.26-3.41-7.3-5.55-15.31-6.15-23.76-.11-1.6-.17-3.23-.17-4.87V215.32c0-1.19.03-2.37.09-3.53.58-11.38,3.97-22.02,9.49-31.23,11.84-19.78,33.48-33.03,58.2-33.03h1045.24c37.44,0,67.79,30.35,67.79,67.79Z"
+                    ></path>
+                  )}
+                  <path
+                    fill={`url(#g-front-${c.id})`}
+                    filter={`url(#inner-${c.id})`}
+                    class="fb-front"
+                    d="M1257.6,273.65v715.51c0,38.77-32.32,70.2-72.2,70.2H72.19C32.32,1059.36,0,1027.94,0,989.17V273.65C0,260.49,3.73,248.18,10.21,237.66c12.61-20.49,35.65-34.2,61.98-34.2h1113.21c29.22,0,54.39,16.87,65.75,41.15,4.14,8.85,6.45,18.68,6.45,29.04Z"
+                  ></path>
+                </svg>
+              </a>
+            ) : (
+              <a
+                class:list={["deck__card", c.id === "video" && "is-video"]}
+                href={`${base}${c.id}`}
+                style={`--off:${c.off}; --aoff:${c.aoff}; --i:${c.i}${c.id === "video" ? "; --rot:7deg; --rnd:-15px" : c.id === "product" ? "; --rot:0deg" : ""}`}
+                aria-label={c.label.en}
+              >
+                <img src={c.img} alt="" loading="eager" />
+                <span class="deck__label">
+                  <span data-ko>{c.label.ko}</span>
+                  <span data-en>{c.label.en}</span>
+                </span>
+              </a>
+            )
+          )
+        }
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .backdrop {
+    --padX: clamp(40px, 6.8vw, 160px); /* 좌우 배경 여백 */
+    --padY: clamp(60px, 11vh, 150px); /* 상하 배경 여백 */
+    min-height: 100vh;
+    padding: var(--padY) var(--padX);
+    box-sizing: border-box;
+    background: var(--wall, linear-gradient(135deg, #d7e0d2 0%, #c3cdbe 45%, #aebfae 100%))
+      center / cover no-repeat fixed;
+  }
+
+  .window {
+    position: relative;
+    min-height: calc(100vh - 2 * var(--padY));
+    background: #ffffff;
+    border-radius: clamp(24px, 2.6vw, 44px);
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.22);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .home-lang {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    z-index: 60;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: #fff;
+    color: #111;
+    font: 13px ui-monospace, monospace;
+    letter-spacing: 0.04em;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .home-lang:hover { border-color: #111; }
+
+
+  /* ── 햄버거 메뉴 ─────────────────────────────────────────── */
+  .menu {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    z-index: 70;
+  }
+  .menu__btn {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    gap: 5px;
+    align-content: center;
+    justify-items: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+  .menu__btn span {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: #111;
+    border-radius: 2px;
+    transition: transform 0.3s var(--ease, ease), opacity 0.2s ease;
+  }
+  .menu.open .menu__btn span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .menu.open .menu__btn span:nth-child(2) { opacity: 0; }
+  .menu.open .menu__btn span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .menu__list {
+    position: absolute;
+    top: 52px;
+    left: 0;
+    min-width: 210px;
+    list-style: none;
+    margin: 0;
+    padding: 10px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.16);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  }
+  .menu.open .menu__list {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  .menu__list a {
+    display: block;
+    padding: 10px 14px;
+    border-radius: 9px;
+    font-family: "Space Mono", ui-monospace, monospace;
+    font-size: 15px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #111;
+    transition: background-color 0.15s ease;
+  }
+  .menu__list a:hover { background: #f2f2f2; }
+
+  .window__top {
+    margin-top: clamp(22px, 4vw, 44px);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #9a9a9a;
+  }
+
+  .window__hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding-bottom: clamp(120px, 19vw, 250px); /* 줄여서 그룹을 중앙 쪽으로 */
+  }
+  .title-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Portfolio 뒤 배경 글씨 — 연두 fill + 라임 테두리 */
+  .hero-behind {
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    font-family: "pf-pixelscript", "Pacifico", cursive;
+    font-weight: 400;
+    font-size: clamp(58px, 13vw, 210px);
+    letter-spacing: -0.05em;
+    line-height: 1;
+    white-space: nowrap;
+    color: #c6ec47; /* 앞 글씨 (라임) */
+    /* 뒤 배경 판(연두)을 두꺼운 stroke로 → 글자별 폰트 혼용 가능 */
+    -webkit-text-stroke: 24px #e5fd6b;
+    text-stroke: 24px #e5fd6b;
+    paint-order: stroke fill;
+    pointer-events: none;
+    user-select: none;
+  }
+  /* Chaehyeon 중 'eo'만 다른 폰트 */
+  .hero-eo {
+    font-family: "gunter", system-ui, sans-serif;
+  }
+  .hero-a {
+    font-size: 0.72em; /* a만 작게 */
+  }
+  .hero-o {
+    font-family: "Array-Wide", system-ui, sans-serif; /* o만 Array */
+  }
+  .hero-C {
+    font-size: 1.28em; /* C만 크게 */
+  }
+  .hero-esm {
+    font-size: 0.72em; /* hyeon의 e만 작게 */
+  }
+  .window__title {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    transform: translateY(64px); /* 제목 아래로 */
+    font-family: "gunter", system-ui, sans-serif;
+    font-size: clamp(43px, 9.9vw, 140px);
+    font-weight: 400;
+    letter-spacing: -0.04em;
+    color: #111;
+    line-height: 1;
+  }
+  .window__sub {
+    margin: 14px 0 0;
+    transform: translateY(64px); /* 제목과 같이 아래로 */
+    font-family: "Space Mono", ui-monospace, monospace;
+    font-size: clamp(12px, 1.4vw, 17px);
+    letter-spacing: 0.12em;
+    color: #9a9a9a;
+    text-align: center;
+  }
+
+  /* ── 카드 덱 ─────────────────────────────────────────────── */
+  .deck {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: clamp(280px, 36vw, 440px);
+    /* 더미(맨 왼쪽 1장) 때문에 왼쪽으로 쏠린 것 보정 + 전체 10% 축소 */
+    transform: translateX(4.8vw) scale(0.9);
+    transform-origin: 50% 100%;
+  }
+  .deck__card {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: clamp(190px, 21vw, 300px);
+    aspect-ratio: 3 / 4;
+    transform-origin: bottom center;
+    transform: translateX(calc(-50% + var(--off) * 9.6vw))
+      translateY(calc(86% + var(--aoff) * 1.6vw)) rotate(var(--rot, calc(var(--off) * 6deg)));
+    opacity: 0;
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease,
+      box-shadow 0.4s ease;
+  }
+  .deck__card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* 등장(박힌 상태) — z-index·높이는 JS가 랜덤(--z, --rnd)으로 지정 */
+  .deck.play .deck__card {
+    transform: translateX(calc(-50% + var(--off) * 9.6vw))
+      translateY(calc(22% + var(--aoff) * 1.6vw + var(--rnd, 0px))) rotate(var(--rot, calc(var(--off) * 6deg)));
+    opacity: 1;
+    z-index: var(--z, 1);
+    transition-delay: calc(var(--i) * 0.07s);
+  }
+  .deck.play .deck__card:hover {
+    transform: translateX(calc(-50% + var(--off) * 9.6vw)) translateY(0%) rotate(0deg) scale(1.03);
+    box-shadow: 0 26px 60px rgba(0, 0, 0, 0.26);
+    z-index: 100; /* 항상 맨 앞 */
+    transition-delay: 0s;
+  }
+  /* 폴더는 호버 시 사각 box-shadow 제거 (모양 그림자는 뒷판 drop-shadow가 담당) */
+  .deck.play .deck__folder:hover {
+    box-shadow: none;
+  }
+  /* 더미 폴더: 호버/클릭 없음, 항상 맨 뒤 */
+  .deck__card.is-dummy { pointer-events: none; }
+
+  .deck__label {
+    position: absolute;
+    top: 16px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #111;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    text-shadow: 0 1px 6px rgba(255, 255, 255, 0.9);
+  }
+  .deck.play .deck__card:hover .deck__label { opacity: 1; }
+
+  /* ── 폴더 (제공받은 SVG 모양, 색만 카테고리별로) ───────────── */
+  .deck__folder {
+    width: clamp(190px, 21vw, 300px); /* 모든 폴더 동일 크기 (사진 카드와 동일) */
+    aspect-ratio: 1257.6 / 1059.36; /* SVG 비율 그대로 */
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+  /* 웹(파란) 폴더는 사진 카드와 같은 가로폭으로 */
+  .deck__folder.is-front {
+    width: clamp(190px, 21vw, 300px);
+  }
+  .folder__svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+  /* 그림자는 뒷판 path에 걸어 폴더 모양 그대로 따라가게 */
+  .fb-back {
+    filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.22));
+    opacity: 0.95;
+    transform: translateY(-70px); /* 뒷판을 더 위로 → 계단 단차 ↑ (SVG 유저좌표) */
+  }
+  /* 색: 뒷판·앞주머니는 SVG 그라디언트(fill 속성), 속지는 밝은 종이 + 앞주머니 반투명 */
+  .fb-paper { fill: #eef1f5; }
+  .fb-front { opacity: 0.95; }
+
+  /* 속지 위 텍스트 (웹 폴더) */
+  .sheet-title {
+    font-family: "martian-mono-variable", ui-monospace, monospace;
+    font-weight: 800;
+    font-size: 86px;
+    letter-spacing: 2px;
+    fill: #2b2f36;
+  }
+  .sheet-sub {
+    font-family: "martian-mono-variable", ui-monospace, monospace;
+    font-weight: 300;
+    font-size: 52px;
+    fill: #767c84;
+  }
+  /* 뒷장 리스트 텍스트 */
+  .sheet-list-title {
+    font-family: "martian-mono-variable", ui-monospace, monospace;
+    font-weight: 800;
+    font-size: 92px; /* 제목처럼 크게 */
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    fill: #23262b;
+  }
+  .sheet-list {
+    font-family: "martian-mono-variable", ui-monospace, monospace;
+    font-weight: 500; /* 중간 굵기 */
+    font-size: 56px; /* 더 크게 */
+    letter-spacing: 1px;
+    fill: #6f757d;
+  }
+  /* 속지: 호버 시 위로 튀어나옴 (SVG 유저좌표 기준) */
+  .fb-paper {
+    transform: translateY(-28px); /* 속지를 살짝 위로 → 계단 단차 ↑ */
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    filter: drop-shadow(0 4px 9px rgba(0, 0, 0, 0.12)); /* 속지 연한 그림자 */
+  }
+  .deck.play .deck__folder:hover .fb-paper {
+    transform: translateY(-150px); /* 앞장: 살짝만 */
+  }
+  /* 뒷장 속지: 훨씬 더 길게·사선으로 */
+  .fb-sheet-back {
+    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.13)); /* 속지 연한 그림자 */
+  }
+  .deck.play .deck__folder:hover .fb-sheet-back {
+    transform: translate(-70px, -780px) rotate(-8deg);
+  }
+
+  /* 인덱스 글씨 (앞주머니 위) */
+  .folder__name {
+    position: absolute;
+    inset: 30% 0 0; /* 앞주머니 위쪽 */
+    display: grid;
+    place-items: center;
+    color: #fff;
+    opacity: 0.82;
+    font-weight: 800; /* 제목처럼 볼드 */
+    font-size: clamp(20px, 3vw, 46px);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 0 12px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .deck__card { transition: none; }
+  }
+  @media (max-width: 640px) {
+    .deck__card { width: clamp(130px, 38vw, 190px); border-radius: 16px; }
+  }
+</style>
+
+<script>
+  function shuffleDeck() {
+    const rng = document.querySelectorAll<HTMLElement>(
+      ".deck__card:not(.is-dummy):not(.is-front):not(.is-back):not(.is-video)"
+    );
+    rng.forEach((el, i) => {
+      // 번갈아 위(-)/아래(+)로 + 지터 → 삐죽삐죽 지그재그
+      const zig = i % 2 === 0 ? -1 : 1;
+      const base = zig * (55 + Math.random() * 55); // 55~110
+      el.style.setProperty("--rnd", Math.round(base) + "px");
+      // 겹침 순서 랜덤
+      el.style.setProperty("--z", String(1 + Math.floor(Math.random() * 30)));
+    });
+  }
+  function playDeck() {
+    const d = document.querySelector(".deck");
+    if (!d) return;
+    d.classList.remove("play");
+    shuffleDeck();
+    requestAnimationFrame(() => d.classList.add("play"));
+  }
+  playDeck();
+  document.addEventListener("astro:page-load", playDeck);
+
+  function initMenu() {
+    const btn = document.getElementById("menuBtn");
+    if (!btn) return;
+    const menu = btn.closest(".menu") as HTMLElement | null;
+    if (!menu || menu.dataset.ready === "1") return;
+    menu.dataset.ready = "1";
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = menu.classList.toggle("open");
+      btn.setAttribute("aria-expanded", String(open));
+    });
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target as Node)) {
+        menu.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+  initMenu();
+  document.addEventListener("astro:page-load", initMenu);
+</script>

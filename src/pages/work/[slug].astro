@@ -1,0 +1,298 @@
+---
+import Base from "../../layouts/Base.astro";
+import { projects, projectsByCategory, categoryById } from "../../data/portfolio";
+import { getProductImages } from "../../lib/products";
+
+export function getStaticPaths() {
+  return projects.map((p) => ({ params: { slug: p.slug }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const cat = categoryById(project.category);
+
+// 사진 작업이면 해당 제품 폴더의 나머지 사진들을 자동으로 갤러리에 표시
+const galleryImages =
+  project.category === "photography" ? getProductImages(project.cover) : [];
+
+// 같은 카테고리 안에서 이전/다음 작업
+const siblings = projectsByCategory(project.category);
+const idx = siblings.findIndex((p) => p.slug === project.slug);
+const prev = idx > 0 ? siblings[idx - 1] : null;
+const next = idx < siblings.length - 1 ? siblings[idx + 1] : null;
+---
+
+<Base
+  title={project.title.ko}
+  description={project.summary?.ko}
+  hideChrome
+>
+  <div class="detail-stage">
+    <div class="wrap detail-top">
+      <a class="back-link" href={`${base}${project.category}`}>
+        <span data-ko>← {cat?.label.ko}</span>
+        <span data-en>← {cat?.label.en}</span>
+      </a>
+      <button class="detail-lang" id="lang-toggle" type="button" aria-label="Language">
+        <span data-ko>EN</span>
+        <span data-en>KO</span>
+      </button>
+    </div>
+  <article class="wrap detail">
+    <header class="detail__head">
+      <h1 class="detail__title">
+        <span data-ko>{project.title.ko}</span>
+        <span data-en>{project.title.en}</span>
+      </h1>
+      {
+        project.summary && (
+          <p class="detail__summary">
+            <span data-ko>{project.summary.ko}</span>
+            <span data-en>{project.summary.en}</span>
+          </p>
+        )
+      }
+
+      <dl class="detail__facts">
+        {
+          project.client && (
+            <div>
+              <dt>Client</dt>
+              <dd>
+                <span data-ko>{project.client.ko}</span>
+                <span data-en>{project.client.en}</span>
+              </dd>
+            </div>
+          )
+        }
+        {
+          project.role && (
+            <div>
+              <dt>Role</dt>
+              <dd>
+                <span data-ko>{project.role.ko}</span>
+                <span data-en>{project.role.en}</span>
+              </dd>
+            </div>
+          )
+        }
+        {
+          project.year && (
+            <div>
+              <dt>Year</dt>
+              <dd>{project.year}</dd>
+            </div>
+          )
+        }
+      </dl>
+    </header>
+
+    <div class="detail__cover">
+      <img src={project.cover} alt="" transition:name={`photo-${project.slug}`} />
+    </div>
+
+    {
+      galleryImages.length > 0 && (
+        <div class="detail-gallery">
+          {galleryImages.map((src) => (
+            <img src={src} alt="" loading="lazy" decoding="async" />
+          ))}
+        </div>
+      )
+    }
+
+    {
+      project.body && project.body.length > 0 && (
+        <div class="blocks">
+          {project.body.map((block) => {
+            if (block.type === "text") {
+              return (
+                <p class="block-text">
+                  <span data-ko>{block.value.ko}</span>
+                  <span data-en>{block.value.en}</span>
+                </p>
+              );
+            }
+            if (block.type === "image") {
+              return (
+                <figure class="block-media">
+                  <img src={block.src} alt="" loading="lazy" />
+                  {block.caption && (
+                    <figcaption>
+                      <span data-ko>{block.caption.ko}</span>
+                      <span data-en>{block.caption.en}</span>
+                    </figcaption>
+                  )}
+                </figure>
+              );
+            }
+            // video — mp4/webm 등 동영상 파일이면 <video>, 그 외(유튜브/비메오 임베드)면 <iframe>
+            const isFile =
+              /\.(mp4|webm|ogv|ogg|mov)(\?.*)?$/i.test(block.src) ||
+              block.src.startsWith("/");
+            return (
+              <figure class="block-media">
+                {isFile ? (
+                  <video
+                    class="block-video"
+                    src={block.src}
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    controls
+                    preload="auto"
+                  />
+                ) : (
+                  <div class="embed">
+                    <iframe
+                      src={block.src}
+                      title="video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen
+                    />
+                  </div>
+                )}
+                {block.caption && (
+                  <figcaption>
+                    <span data-ko>{block.caption.ko}</span>
+                    <span data-en>{block.caption.en}</span>
+                  </figcaption>
+                )}
+              </figure>
+            );
+          })}
+        </div>
+      )
+    }
+
+    <nav class="detail__nav">
+      <span>
+        {
+          prev && (
+            <a href={`${base}work/${prev.slug}`}>
+              <span data-ko>← {prev.title.ko}</span>
+              <span data-en>← {prev.title.en}</span>
+            </a>
+          )
+        }
+      </span>
+      <span>
+        {
+          next && (
+            <a href={`${base}work/${next.slug}`}>
+              <span data-ko>{next.title.ko} →</span>
+              <span data-en>{next.title.en} →</span>
+            </a>
+          )
+        }
+      </span>
+    </nav>
+  </article>
+
+  <button class="to-top" id="to-top" type="button" aria-label="맨 위로">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="12" y1="19" x2="12" y2="6" />
+      <polyline points="6 12 12 6 18 12" />
+    </svg>
+  </button>
+  </div>
+</Base>
+
+<script is:inline>
+  (function () {
+    if (window.__toTopBound) return;
+    window.__toTopBound = true;
+    document.addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest("#to-top") : null;
+      if (!b) return;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  })();
+</script>
+
+<style is:global>
+  /* ── 제품 상세: 다크 배경 + 화이트 텍스트 ── */
+  .detail-stage {
+    background: #0b0b0c;
+    color: #eaeaea;
+    min-height: 100vh;
+    padding-bottom: clamp(60px, 12vw, 140px);
+  }
+  .detail-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: clamp(16px, 3vw, 30px);
+  }
+  .detail-stage .back-link { color: #cfcfcf; margin-bottom: 0; }
+  .detail-stage .back-link:hover { color: #fff; }
+  .detail-lang {
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: #ddd;
+    font: 12px "Space Mono", ui-monospace, monospace;
+    letter-spacing: 0.04em;
+    padding: 5px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .detail-lang:hover { border-color: #fff; color: #fff; }
+
+  .detail-stage .detail__title { color: #fff; }
+  .detail-stage .detail__summary { color: #b6b6b8; }
+  .detail-stage .detail__facts { color: #8a8a8c; }
+  .detail-stage .detail__facts dd { color: #dcdcde; }
+  .detail-stage .detail__cover { background: #151516; }
+  /* 제품 폴더의 모든 사진 (커버 아래 세로 갤러리) */
+  .detail-gallery {
+    margin-top: clamp(16px, 3vw, 28px);
+    display: grid;
+    gap: clamp(16px, 3vw, 28px);
+  }
+  .detail-gallery img {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: #151516;
+  }
+  .detail-stage .block-text { color: #e6e6e8; }
+  .detail-stage .block-media figcaption { color: #8a8a8c; }
+  .detail-stage .detail__nav {
+    color: #8a8a8c;
+    border-top-color: #2a2a2c;
+  }
+  .detail-stage .detail__nav a:hover { color: #fff; }
+
+  /* 맨 위로 버튼 (우하단 고정, 흰 선 원 + 흰 선 위쪽 화살표) */
+  .to-top {
+    position: fixed;
+    right: clamp(16px, 3vw, 36px);
+    bottom: clamp(16px, 3vw, 36px);
+    width: clamp(46px, 4vw, 56px);
+    height: clamp(46px, 4vw, 56px);
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    background: rgba(0, 0, 0, 0.28);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 200;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .to-top:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: #fff;
+    transform: translateY(-2px);
+  }
+  .to-top svg {
+    width: 62%;
+    height: 62%;
+    display: block;
+  }
+</style>

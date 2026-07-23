@@ -1,0 +1,23 @@
+# build output
+dist/
+# generated types
+.astro/
+# generated thumbnails (재생성됨: predev/prebuild 시 scripts/make-thumbs.mjs)
+public/thumbs/
+# dependencies
+node_modules/
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+# environment
+.env
+.env.*
+!.env.example
+# editor
+.vscode/
+.idea/
+# OS
+.DS_Store
+Thumbs.db

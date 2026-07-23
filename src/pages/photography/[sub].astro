@@ -1,0 +1,15 @@
+---
+// /photography/snap, /photography/etc — 'product'는 index.astro가 담당하므로 제외
+import PhotoSubPage from "../../components/PhotoSubPage.astro";
+import { photoSubs } from "../../data/portfolio";
+
+export function getStaticPaths() {
+  return photoSubs
+    .filter((s) => s.id !== "product")
+    .map((s) => ({ params: { sub: s.id } }));
+}
+
+const { sub } = Astro.params;
+---
+
+<PhotoSubPage subId={sub!} />

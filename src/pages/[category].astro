@@ -1,0 +1,72 @@
+---
+import Base from "../layouts/Base.astro";
+import Card from "../components/Card.astro";
+import { categories, projectsByCategory, categoryById } from "../data/portfolio";
+import { getBrandingImages } from "../lib/branding";
+
+export function getStaticPaths() {
+  // '사진'은 하위 분류가 있어 /photography/* 에서 별도로 처리
+  return categories
+    .filter((c) => c.id !== "photography")
+    .map((c) => ({ params: { category: c.id } }));
+}
+
+const { category } = Astro.params;
+const cat = categoryById(category!);
+if (!cat) return Astro.redirect("/404");
+const items = projectsByCategory(cat.id);
+
+// 브랜딩: 폴더의 브랜드북 이미지를 세로로 빈틈없이 나열
+const isBranding = cat.id === "branding";
+const brandImages = isBranding ? getBrandingImages() : [];
+---
+
+<Base title={cat.label.ko} active={cat.id}>
+  <section class="wrap page-head">
+    <h1>
+      <span data-ko>{cat.label.ko}</span>
+      <span data-en>{cat.label.en}</span>
+    </h1>
+  </section>
+
+  {
+    isBranding ? (
+      brandImages.length > 0 ? (
+        <section class="brand-book">
+          {brandImages.map((im) => (
+            <img src={im.thumb} alt={im.name} loading="lazy" decoding="async" />
+          ))}
+        </section>
+      ) : (
+        <section class="wrap" style="padding-bottom: 120px; color: var(--muted);">
+          <span data-ko>아직 등록된 이미지가 없습니다.</span>
+          <span data-en>No images yet.</span>
+        </section>
+      )
+    ) : items.length > 0 ? (
+      <section class="wrap grid">
+        {items.map((p) => <Card project={p} />)}
+      </section>
+    ) : (
+      <section class="wrap" style="padding-bottom: 120px; color: var(--muted);">
+        <span data-ko>아직 등록된 작업이 없습니다.</span>
+        <span data-en>No projects yet.</span>
+      </section>
+    )
+  }
+</Base>
+
+<style>
+  /* 브랜드북: 가운데 정렬 세로 스택, 이미지 사이 여백 0 */
+  .brand-book {
+    max-width: 960px;
+    margin: 0 auto clamp(60px, 10vw, 120px);
+    font-size: 0; /* 인라인 여백 제거 */
+  }
+  .brand-book img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0;
+  }
+</style>

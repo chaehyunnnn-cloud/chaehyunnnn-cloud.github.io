@@ -1,0 +1,112 @@
+---
+import "../styles/global.css";
+import { ViewTransitions } from "astro:transitions";
+import { categories } from "../data/portfolio";
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** 현재 활성 탭 표시용 카테고리 id (없으면 없음) */
+  active?: string;
+  /** 헤더/푸터 숨김 (전체화면 콜라주 홈 등) */
+  hideChrome?: boolean;
+}
+
+const { title, description, active, hideChrome } = Astro.props;
+const siteName = "chaehyeon"; // ← 사이트/작가 이름. 여기만 바꾸면 헤더·푸터 전체 반영.
+const fullTitle = title ? `${title} — ${siteName}` : siteName;
+const base = import.meta.env.BASE_URL;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{fullTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" href="data:," />
+    {/* 콜라주 홈용 폰트: Fredoka(굵은 라운드 제목) · Space Mono(타자기 리스트) */}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Pacifico&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    {/* Adobe Fonts (Typekit) — martian-mono-variable */}
+    <link rel="stylesheet" href="https://use.typekit.net/ifs2gtv.css?v=5" />
+    {/* 첫 페인트 전에 언어 설정을 적용해 깜빡임(FOUC) 방지 */}
+    <script is:inline>
+      (function () {
+        try {
+          var l = localStorage.getItem("lang");
+          if (l === "ko") document.documentElement.setAttribute("data-lang", "ko");
+        } catch (e) {}
+      })();
+    </script>
+    {/* 페이지 전환 애니메이션 (사진 → 상세 이미지 확대 morph) */}
+    <ViewTransitions />
+  </head>
+  <body>
+    {!hideChrome && (
+    <header class="site-header">
+      <div class="wrap site-header__inner">
+        <a class="brand" href={base}>{siteName}</a>
+        <nav class="nav" aria-label="카테고리">
+          {
+            categories.map((c) => (
+              <a
+                href={`${base}${c.id}`}
+                aria-current={active === c.id ? "page" : undefined}
+              >
+                <span data-ko>{c.label.ko}</span>
+                <span data-en>{c.label.en}</span>
+              </a>
+            ))
+          }
+        </nav>
+        <button class="lang-toggle" id="lang-toggle" type="button" aria-label="Language">
+          <span data-ko>EN</span>
+          <span data-en>KO</span>
+        </button>
+      </div>
+    </header>
+    )}
+
+    <main>
+      <slot />
+    </main>
+
+    {!hideChrome && (
+    <footer class="site-footer wrap">
+      <span>© {year} {siteName}</span>
+      <span>
+        <span data-ko>모든 권리 보유</span>
+        <span data-en>All rights reserved</span>
+      </span>
+    </footer>
+    )}
+
+    {/* 언어 토글: document에 이벤트 위임 → 페이지 전환(View Transitions) 후에도 동작 유지 */}
+    <script is:inline>
+      (function () {
+        if (window.__langBound) return;
+        window.__langBound = true;
+        document.addEventListener("click", function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest("#lang-toggle") : null;
+          if (!btn) return;
+          var ko = document.documentElement.getAttribute("data-lang") === "ko";
+          if (ko) {
+            document.documentElement.removeAttribute("data-lang");
+            try { localStorage.setItem("lang", "en"); } catch (e2) {}
+          } else {
+            document.documentElement.setAttribute("data-lang", "ko");
+            try { localStorage.setItem("lang", "ko"); } catch (e2) {}
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

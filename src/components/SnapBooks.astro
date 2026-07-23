@@ -1,0 +1,334 @@
+---
+import type { SnapBook } from "../lib/snap";
+interface Props {
+  books: SnapBook[];
+}
+const { books } = Astro.props;
+---
+
+<div class="books">
+  {
+    books.map((b) => (
+      <figure class="book-item">
+        <div class="book" data-spreads={JSON.stringify(b.spreads)}>
+          <div class="spread">
+            <div class="page page-left" role="button" aria-label="이전 페이지">
+              <img alt="" />
+            </div>
+            <div class="page page-right" role="button" aria-label="다음 페이지">
+              <img alt="" />
+            </div>
+            <div class="spine" aria-hidden="true" />
+          </div>
+          {/* 넘어가는 낱장 */}
+          <div class="leaf" aria-hidden="true">
+            <div class="leaf-face leaf-front">
+              <img alt="" />
+            </div>
+            <div class="leaf-face leaf-back">
+              <img alt="" />
+            </div>
+          </div>
+        </div>
+        <figcaption class="book-cap">
+          <span class="book-city">{b.title}</span>
+          <span class="book__pageno" aria-hidden="true" />
+        </figcaption>
+      </figure>
+    ))
+  }
+</div>
+
+<style>
+  .books {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(28px, 5vw, 72px);
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: clamp(20px, 4vw, 48px) 0 clamp(60px, 10vw, 120px);
+  }
+  @media (max-width: 720px) {
+    .books { grid-template-columns: 1fr; gap: 40px; }
+  }
+
+  .book {
+    position: relative;
+    aspect-ratio: 1.4 / 1;
+    perspective: 2000px;
+    user-select: none;
+  }
+  .spread {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  .page {
+    position: relative;
+    width: 50%;
+    height: 100%;
+    background: #fff;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .page[hidden] { visibility: hidden; }
+  .page-left { cursor: w-resize; }
+  .page-right { cursor: e-resize; }
+
+  /* 이미지 셀 모드: single(한 장) / c-fl,c-fr(가로 사진의 왼·오른 반쪽) */
+  .page img,
+  .leaf-face img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 세로 2장은 꽉 채움 */
+    display: block;
+    pointer-events: none;
+    background: #fff;
+  }
+  /* 가로 사진 = 폭 2페이지로 깔고, 왼쪽 페이지=왼 절반 / 오른쪽 페이지=오른 절반 (중앙 안 잘림) */
+  img.c-fl {
+    width: 200% !important;
+    left: 0 !important;
+    right: auto !important;
+  }
+  img.c-fr {
+    width: 200% !important;
+    left: auto !important;
+    right: 0 !important;
+  }
+
+  /* 가운데 접힘 그림자 + 그레인 */
+  .spine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 160px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.03) 28%,
+      rgba(0, 0, 0, 0.12) 42%,
+      rgba(0, 0, 0, 0.3) 50%,
+      rgba(0, 0, 0, 0.12) 58%,
+      rgba(0, 0, 0, 0.03) 72%,
+      rgba(0, 0, 0, 0) 100%
+    );
+    z-index: 4;
+  }
+  /* 페이지 분할 느낌을 확실히 주는 가운데 세로 검은선 */
+  .spine::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.62);
+    z-index: 1;
+  }
+  .spine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 140px 140px;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    -webkit-mask: linear-gradient(to right, transparent 20%, #000 46%, #000 54%, transparent 80%);
+    mask: linear-gradient(to right, transparent 20%, #000 46%, #000 54%, transparent 80%);
+    pointer-events: none;
+  }
+
+  /* 넘어가는 낱장 */
+  .leaf {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.62s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 6;
+    display: none;
+    will-change: transform;
+  }
+  .leaf--fwd { left: 50%; transform-origin: left center; }
+  .leaf--bwd { left: 0; transform-origin: right center; }
+  .leaf-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  }
+  .leaf-back { transform: rotateY(180deg); }
+
+  .book-item { margin: 0; }
+  .book-cap {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 14px;
+    font: 12px "Space Mono", ui-monospace, monospace;
+  }
+  .book-city { color: #eee; text-transform: uppercase; letter-spacing: 0.12em; }
+  .book__pageno { color: #777; letter-spacing: 0.1em; }
+</style>
+
+<script>
+  type Cell = { src: string; mode: string } | null;
+  type Spread = { l: Cell; r: Cell };
+
+  function initBook(book: HTMLElement) {
+    if (book.dataset.ready === "1") return;
+    book.dataset.ready = "1";
+    let spreads: Spread[] = [];
+    try {
+      spreads = JSON.parse(book.dataset.spreads || "[]");
+    } catch (e) {}
+    const total = spreads.length;
+    if (!total) return;
+
+    const L = book.querySelector<HTMLImageElement>(".page-left img")!;
+    const R = book.querySelector<HTMLImageElement>(".page-right img")!;
+    const pageLeft = book.querySelector<HTMLElement>(".page-left")!;
+    const pageRight = book.querySelector<HTMLElement>(".page-right")!;
+    const leaf = book.querySelector<HTMLElement>(".leaf")!;
+    const lf = leaf.querySelector<HTMLImageElement>(".leaf-front img")!;
+    const lb = leaf.querySelector<HTMLImageElement>(".leaf-back img")!;
+    const no = book.parentElement?.querySelector<HTMLElement>(".book__pageno") ?? null;
+
+    let s = 0;
+    let busy = false;
+
+    function apply(img: HTMLImageElement, host: HTMLElement | null, cell: Cell) {
+      if (!cell) {
+        if (host) host.hidden = true;
+        img.removeAttribute("src");
+        return;
+      }
+      if (host) host.hidden = false;
+      img.src = cell.src;
+      // 인라인 스타일로 직접 배치 (스코프드 CSS 우회 → 확실히 적용)
+      const s = img.style;
+      s.position = "absolute";
+      s.top = "0";
+      s.height = "100%";
+      s.objectFit = "cover";
+      s.setProperty("max-width", "none", "important"); // 전역 img{max-width:100%} 무력화
+      if (cell.mode === "c-fl") {
+        // 가로 사진 왼쪽 절반 (사진 중앙이 오른쪽=책 접힘에 오게)
+        s.setProperty("width", "200%", "important");
+        s.left = "0";
+        s.right = "auto";
+      } else if (cell.mode === "c-fr") {
+        // 가로 사진 오른쪽 절반 (사진 중앙이 왼쪽=책 접힘에 오게)
+        s.setProperty("width", "200%", "important");
+        s.left = "auto";
+        s.right = "0";
+      } else {
+        // 세로 사진 한 장
+        s.setProperty("width", "100%", "important");
+        s.left = "0";
+        s.right = "auto";
+      }
+    }
+
+    const cache: Record<string, boolean> = {};
+    function preload(cell: Cell) {
+      if (cell && !cache[cell.src]) {
+        cache[cell.src] = true;
+        const im = new Image();
+        im.src = cell.src;
+      }
+    }
+    function preloadAround() {
+      [s - 1, s + 1].forEach((k) => {
+        if (spreads[k]) {
+          preload(spreads[k].l);
+          preload(spreads[k].r);
+        }
+      });
+    }
+
+    function render() {
+      apply(L, pageLeft, spreads[s].l);
+      apply(R, pageRight, spreads[s].r);
+      if (no) no.textContent = `${s + 1} / ${total}`;
+      preloadAround();
+    }
+    render();
+
+    function done(dir: number) {
+      s += dir;
+      render();
+      leaf.style.display = "none";
+      leaf.style.transform = "";
+      busy = false;
+    }
+
+    function forward() {
+      if (busy || s >= total - 1) return;
+      busy = true;
+      const next = spreads[s + 1];
+      leaf.className = "leaf leaf--fwd";
+      apply(lf, null, spreads[s].r); // 현재 오른쪽
+      apply(lb, null, next.l); // 다음 왼쪽
+      apply(R, pageRight, next.r); // 넘어가면 보일 다음 오른쪽
+      leaf.style.display = "block";
+      leaf.style.transform = "rotateY(0deg)";
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => (leaf.style.transform = "rotateY(-180deg)"))
+      );
+      leaf.addEventListener("transitionend", function te() {
+        leaf.removeEventListener("transitionend", te);
+        done(1);
+      });
+    }
+
+    function backward() {
+      if (busy || s <= 0) return;
+      busy = true;
+      const prev = spreads[s - 1];
+      leaf.className = "leaf leaf--bwd";
+      apply(lf, null, spreads[s].l); // 현재 왼쪽
+      apply(lb, null, prev.r); // 이전 오른쪽
+      apply(L, pageLeft, prev.l); // 넘어가면 보일 이전 왼쪽
+      leaf.style.display = "block";
+      leaf.style.transform = "rotateY(0deg)";
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => (leaf.style.transform = "rotateY(180deg)"))
+      );
+      leaf.addEventListener("transitionend", function te() {
+        leaf.removeEventListener("transitionend", te);
+        done(-1);
+      });
+    }
+
+    // 클릭 위치(좌/우 절반)로 넘김 → 빈 페이지가 있어도 항상 동작
+    book.addEventListener("click", (e) => {
+      if (busy) return;
+      const rect = book.getBoundingClientRect();
+      const x = (e as MouseEvent).clientX - rect.left;
+      if (x < rect.width / 2) backward();
+      else forward();
+    });
+  }
+
+  function initSnap() {
+    document.querySelectorAll<HTMLElement>(".book").forEach(initBook);
+  }
+  initSnap();
+  document.addEventListener("astro:page-load", initSnap);
+</script>

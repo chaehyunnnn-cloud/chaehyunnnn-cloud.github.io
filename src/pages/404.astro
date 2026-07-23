@@ -1,0 +1,20 @@
+---
+import Base from "../layouts/Base.astro";
+const base = import.meta.env.BASE_URL;
+---
+
+<Base title="404">
+  <section class="wrap page-head">
+    <h1>404</h1>
+    <p>
+      <span data-ko>페이지를 찾을 수 없습니다.</span>
+      <span data-en>Page not found.</span>
+    </p>
+    <p style="margin-top:24px;">
+      <a class="back-link" href={base}>
+        <span data-ko>← 홈으로</span>
+        <span data-en>← Back home</span>
+      </a>
+    </p>
+  </section>
+</Base>
