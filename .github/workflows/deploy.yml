@@ -1,0 +1,38 @@
+name: Deploy Astro site to GitHub Pages
+
+# main 브랜치에 push될 때마다 자동 빌드 + 배포 (수동 업로드 불필요)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # 수동 실행 버튼도 제공
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 한 번에 하나만 (겹치는 실행은 큐잉)
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build with Astro
+        # 의존성 설치 → npm run build(prebuild로 썸네일 자동 생성 포함) → dist 업로드
+        uses: withastro/action@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

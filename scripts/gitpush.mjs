@@ -8,7 +8,7 @@ import path from "node:path";
 const ROOT = process.cwd();
 const SECRET = "git-secret.local.json";
 const USER = "chaehyunnnn-cloud";
-const REPO = "chaehyunnnn-cloud/fuckannecy.git";
+const REPO = "chaehyunnnn-cloud/chaehyunnnn-cloud.github.io.git";
 const BRANCH = "main";
 
 function run(args, opts = {}) {
