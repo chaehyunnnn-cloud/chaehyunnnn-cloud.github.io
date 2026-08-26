@@ -17,6 +17,8 @@ pnpm-debug.log*
 !.env.example
 # secrets — 절대 커밋 금지 (깃 토큰 등)
 git-secret.local.json
+git-secret.txt
+git-secret*.txt
 *.local.json
 *.secret.json
 secrets/
