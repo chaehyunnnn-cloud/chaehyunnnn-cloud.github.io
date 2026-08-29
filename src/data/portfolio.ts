@@ -110,6 +110,19 @@ export const projects: Project[] = [
     },
   },
   {
+    slug: 'pdrn-essence',
+    category: 'photography',
+    title: { ko: 'PDRN essence', en: 'PDRN essence' },
+    cover: '/images/photography/PDRNessence/DSC01553-2-3.jpg',
+    year: '2026',
+    client: { ko: 'IZEZE', en: 'IZEZE' },
+    role: { ko: '촬영 · 보정', en: 'Photography · Retouch' },
+    summary: {
+      ko: '엑소좀과 PDRN, 초록빛 제형을 실험실의 언어로 담았습니다.',
+      en: 'Exosome and PDRN — a green formula in the language of the lab.',
+    },
+  },
+  {
     slug: 'cleanser',
     category: 'photography',
     title: { ko: 'cleanser', en: 'cleanser' },
