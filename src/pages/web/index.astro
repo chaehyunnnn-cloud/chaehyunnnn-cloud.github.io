@@ -56,6 +56,7 @@ const sections = webSubs.map((s) => {
           <a class="more-btn" href={href}>
             <span data-ko>더 보기</span>
             <span data-en>View more</span>
+            <span class="more-btn__arrow" aria-hidden="true">↓</span>
           </a>
         </div>
       </section>
@@ -64,13 +65,37 @@ const sections = webSubs.map((s) => {
 </Base>
 
 <style>
+  /* ── 한 화면에 한 분류씩 (스크롤 스냅) ───────────────────────────────
+     · html에 scroll-snap-type을 걸어야 해서 is:global 사용.
+       이 스타일시트는 /web 페이지에서만 로드되므로 다른 페이지엔 영향 없음. */
+
   /* 웹디자인 메인은 제목·컨텐츠 모두 중앙 정렬 */
   .page-head--center {
     text-align: center;
   }
 
+  /* 제목 화면 — 첫 스냅 지점 */
+  .page-head--center {
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    scroll-snap-align: start;
+    padding-block: 0;
+  }
+  .page-head--center h1 {
+    font-size: clamp(44px, 9vw, 116px);
+  }
+
+  /* 분류 한 개 = 한 화면 */
   .block {
-    padding-bottom: clamp(56px, 9vw, 110px);
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: clamp(72px, 10vh, 120px) clamp(24px, 5vh, 56px);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 
   /* 분류 제목 줄 — 제목 + 개수 */
@@ -79,12 +104,12 @@ const sections = webSubs.map((s) => {
     align-items: baseline;
     justify-content: center;
     gap: 12px;
-    padding-bottom: clamp(16px, 2.5vw, 28px);
+    padding-bottom: clamp(14px, 2vh, 24px);
     border-bottom: 1px solid var(--line);
-    margin-bottom: clamp(20px, 3vw, 34px);
+    margin-bottom: clamp(18px, 3vh, 32px);
   }
   .block__title {
-    font-size: clamp(22px, 3.2vw, 38px);
+    font-size: clamp(24px, 3.6vw, 44px);
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.1;
@@ -110,13 +135,20 @@ const sections = webSubs.map((s) => {
     color: var(--muted);
   }
 
-  /* .grid의 하단 여백은 섹션이 직접 관리 */
+  /* 컨텐츠 크게 — 카드 이미지 높이를 화면 비율로 */
   .block__grid {
     padding-bottom: 0;
   }
-  /* 카드 아래 제목·요약도 중앙 (이 페이지 한정) */
+  .block__grid :global(.card__media) {
+    aspect-ratio: auto;
+    height: clamp(240px, 52vh, 620px);
+  }
   .block__grid :global(.card__meta) {
     text-align: center;
+    padding-top: 16px;
+  }
+  .block__grid :global(.card__title) {
+    font-size: clamp(16px, 1.5vw, 20px);
   }
 
   .block__empty {
@@ -127,25 +159,51 @@ const sections = webSubs.map((s) => {
     font-size: 15px;
   }
 
+  /* 더 보기 — 테두리 없이 텍스트 + 아래 화살표만 */
   .block__more {
-    margin-top: clamp(20px, 3vw, 34px);
+    margin-top: clamp(18px, 3vh, 32px);
     text-align: center;
   }
   .more-btn {
-    display: inline-block;
-    padding: 11px 24px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
     font-family: "Space Mono", ui-monospace, monospace;
     font-size: 13px;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--fg);
-    transition: background-color 0.18s ease, border-color 0.18s ease;
+    color: var(--muted);
+    transition: color 0.18s ease;
   }
   .more-btn:hover {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: #fff;
+    color: var(--fg);
+  }
+  .more-btn__arrow {
+    font-size: 16px;
+    line-height: 1;
+    animation: moreBounce 1.8s var(--ease) infinite;
+  }
+  .more-btn:hover .more-btn__arrow {
+    animation-play-state: paused;
+    transform: translateY(3px);
+  }
+  @keyframes moreBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(5px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .more-btn__arrow { animation: none; }
+  }
+</style>
+
+<style is:global>
+  /* 스냅 컨테이너 — /web 에서만 적용된다 (이 CSS는 이 페이지에서만 로드) */
+  html {
+    scroll-snap-type: y mandatory;
+  }
+  /* 마지막 화면 다음의 푸터도 스냅 지점으로 */
+  .site-footer {
+    scroll-snap-align: start;
   }
 </style>
