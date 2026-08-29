@@ -249,6 +249,12 @@ html[data-lang="ko"] [data-ko] { display: revert; }
 .embed { position: relative; aspect-ratio: 16 / 9; background: #000; }
 .embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .block-video { display: block; width: 100%; height: auto; background: #000; }
+/* motion: GIF 대체 영상 — 이미지처럼 보이도록 배경 제거 + 클릭 반응 없음
+   (컨트롤이 없으므로 클릭해도 할 일이 없고, 실수로 일시정지되는 것도 막음) */
+.block-video.is-motion {
+  background: transparent;
+  pointer-events: none;
+}
 
 /* 뒤로/다음 */
 .detail__nav {

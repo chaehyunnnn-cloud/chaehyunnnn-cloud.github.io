@@ -44,10 +44,25 @@ export type WebSubId = (typeof webSubs)[number]['id'];
 export type Block =
   | { type: 'text'; value: L10n }
   | { type: 'image'; src: string; caption?: L10n }
-  | { type: 'video'; src: string; caption?: L10n };
+  | {
+      type: 'video';
+      src: string;
+      caption?: L10n;
+      /**
+       * true면 GIF처럼 재생 — 재생바·버튼 없이 소리 없는 무한 반복.
+       * (웹디자인 상세페이지의 움직이는 컷 등)
+       * 없거나 false면 재생 컨트롤이 보이는 일반 영상.
+       * 유튜브/비메오 임베드에는 적용되지 않습니다.
+       */
+      motion?: boolean;
+    };
 //  video의 src 두 가지 방식:
 //   1) 파일: '/videos/clip.mp4' (public/videos/ 에 넣기) — mp4/webm/mov 가능, GIF 불필요
 //   2) 임베드: 'https://www.youtube.com/embed/<ID>' (유튜브/비메오)
+//
+//  ▶ GIF를 대체하는 '움직이는 컷'은 motion: true 를 붙이세요.
+//     { type: 'video', src: '/videos/detail-1.mp4', motion: true }
+//     → 컨트롤 없이 자동·무음·무한 반복 (GIF와 동일하게 보임)
 
 export type Project = {
   /** URL에 쓰이는 고유 값 (영문/숫자/하이픈). 예: /work/seoul-rooftop */

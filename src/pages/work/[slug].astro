@@ -133,15 +133,18 @@ const next = idx < siblings.length - 1 ? siblings[idx + 1] : null;
             return (
               <figure class="block-media">
                 {isFile ? (
+                  /* motion: GIF 대체용 — 컨트롤 없이 자동·무음·무한 반복.
+                     여러 개가 한 페이지에 놓일 수 있어 preload는 metadata로 가볍게
+                     (화면에 들어올 때 브라우저가 알아서 받아 재생). */
                   <video
-                    class="block-video"
+                    class:list={["block-video", block.motion && "is-motion"]}
                     src={block.src}
                     autoplay
                     muted
                     loop
                     playsinline
-                    controls
-                    preload="auto"
+                    controls={block.motion ? undefined : true}
+                    preload={block.motion ? "metadata" : "auto"}
                   />
                 ) : (
                   <div class="embed">
