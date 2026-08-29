@@ -1,0 +1,139 @@
+---
+// /web — 웹디자인 메인.
+// 하위 분류(제품 상세페이지 / 프로모션 / UI / 소셜)마다 한 섹션씩 세로로 쌓는다.
+// 섹션 = [분류 제목(→ 하위 페이지)] + [작업 3개] + [View more(→ 하위 페이지)]
+import Base from "../../layouts/Base.astro";
+import Card from "../../components/Card.astro";
+import { webSubs, projectsByWebSub, categoryById } from "../../data/portfolio";
+
+const cat = categoryById("web")!;
+const base = import.meta.env.BASE_URL;
+const PREVIEW = 3; // 메인에서 한 분류당 보여줄 개수 (가로 3개)
+
+const sections = webSubs.map((s) => {
+  const items = projectsByWebSub(s.id);
+  return { sub: s, items, shown: items.slice(0, PREVIEW), href: `${base}web/${s.id}` };
+});
+---
+
+<Base title={cat.label.ko} active="web">
+  <section class="wrap page-head">
+    <h1>
+      <span data-ko>{cat.label.ko}</span>
+      <span data-en>{cat.label.en}</span>
+    </h1>
+  </section>
+
+  {
+    sections.map(({ sub, items, shown, href }) => (
+      <section class="wrap block">
+        <header class="block__head">
+          {/* 제목을 누르면 해당 하위 분류 페이지로 */}
+          <a class="block__title" href={href}>
+            <span data-ko>{sub.label.ko}</span>
+            <span data-en>{sub.label.en}</span>
+            <span class="block__arrow" aria-hidden="true">→</span>
+          </a>
+          {items.length > 0 && (
+            <span class="block__count">{String(items.length).padStart(2, "0")}</span>
+          )}
+        </header>
+
+        {shown.length > 0 ? (
+          <div class="grid block__grid">
+            {shown.map((p) => (
+              <Card project={p} />
+            ))}
+          </div>
+        ) : (
+          <p class="block__empty">
+            <span data-ko>아직 등록된 작업이 없습니다.</span>
+            <span data-en>No projects yet.</span>
+          </p>
+        )}
+
+        <div class="block__more">
+          <a class="more-btn" href={href}>
+            <span data-ko>더 보기</span>
+            <span data-en>View more</span>
+          </a>
+        </div>
+      </section>
+    ))
+  }
+</Base>
+
+<style>
+  .block {
+    padding-bottom: clamp(56px, 9vw, 110px);
+  }
+
+  /* 분류 제목 줄 — 제목 + 개수 */
+  .block__head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding-bottom: clamp(16px, 2.5vw, 28px);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: clamp(20px, 3vw, 34px);
+  }
+  .block__title {
+    font-size: clamp(22px, 3.2vw, 38px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--fg);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .block__arrow {
+    font-size: 0.62em;
+    color: var(--muted);
+    transform: translateX(-4px);
+    opacity: 0;
+    transition: transform 0.28s var(--ease), opacity 0.28s var(--ease);
+  }
+  .block__title:hover .block__arrow {
+    transform: none;
+    opacity: 1;
+  }
+  .block__count {
+    font-family: "Space Mono", ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* .grid의 하단 여백은 섹션이 직접 관리 */
+  .block__grid {
+    padding-bottom: 0;
+  }
+
+  .block__empty {
+    margin: 0;
+    padding: clamp(28px, 5vw, 52px) 0;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .block__more {
+    margin-top: clamp(20px, 3vw, 34px);
+  }
+  .more-btn {
+    display: inline-block;
+    padding: 11px 24px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-family: "Space Mono", ui-monospace, monospace;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg);
+    transition: background-color 0.18s ease, border-color 0.18s ease;
+  }
+  .more-btn:hover {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: #fff;
+  }
+</style>

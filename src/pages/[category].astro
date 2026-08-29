@@ -5,9 +5,11 @@ import { categories, projectsByCategory, categoryById } from "../data/portfolio"
 import { getBrandingImages } from "../lib/branding";
 
 export function getStaticPaths() {
-  // '사진'은 하위 분류가 있어 /photography/* 에서 별도로 처리
+  // 하위 분류가 있는 카테고리는 각자 전용 페이지에서 처리
+  //  · 사진   → /photography/*
+  //  · 웹디자인 → /web/index.astro (하위 분류별 섹션) + /web/[sub]
   return categories
-    .filter((c) => c.id !== "photography")
+    .filter((c) => c.id !== "photography" && c.id !== "web")
     .map((c) => ({ params: { category: c.id } }));
 }
 
