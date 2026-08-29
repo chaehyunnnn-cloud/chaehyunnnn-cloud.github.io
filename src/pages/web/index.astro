@@ -17,23 +17,18 @@ const sections = webSubs.map((s) => {
 ---
 
 <Base title={cat.label.ko} active="web">
-  <section class="wrap page-head page-head--center">
-    <h1>
-      <span data-ko>{cat.label.ko}</span>
-      <span data-en>{cat.label.en}</span>
-    </h1>
-  </section>
-
   {
     sections.map(({ sub, items, shown, href }) => (
       <section class="wrap block">
         <header class="block__head">
           {/* 제목을 누르면 해당 하위 분류 페이지로 */}
-          <a class="block__title" href={href}>
-            <span data-ko>{sub.label.ko}</span>
-            <span data-en>{sub.label.en}</span>
-            <span class="block__arrow" aria-hidden="true">→</span>
-          </a>
+          <h2 class="block__h">
+            <a class="block__title" href={href}>
+              <span data-ko>{sub.label.ko}</span>
+              <span data-en>{sub.label.en}</span>
+              <span class="block__arrow" aria-hidden="true">→</span>
+            </a>
+          </h2>
           {items.length > 0 && (
             <span class="block__count">{String(items.length).padStart(2, "0")}</span>
           )}
@@ -65,48 +60,33 @@ const sections = webSubs.map((s) => {
 </Base>
 
 <style>
-  /* ── 한 화면에 한 분류씩 (스크롤 스냅) ───────────────────────────────
-     · html에 scroll-snap-type을 걸어야 해서 is:global 사용.
-       이 스타일시트는 /web 페이지에서만 로드되므로 다른 페이지엔 영향 없음. */
-
-  /* 웹디자인 메인은 제목·컨텐츠 모두 중앙 정렬 */
-  .page-head--center {
-    text-align: center;
-  }
-
-  /* 제목 화면 — 첫 스냅 지점 */
-  .page-head--center {
-    min-height: 100svh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    scroll-snap-align: start;
-    padding-block: 0;
-  }
-  .page-head--center h1 {
-    font-size: clamp(44px, 9vw, 116px);
-  }
-
-  /* 분류 한 개 = 한 화면 */
+  /* ── 한 분류 = 한 화면 (스크롤 스냅) ─────────────────────────────────
+     .site-header가 position:sticky(높이 --header-h)라 화면 위를 덮는다.
+     그래서 (1) 스냅 위치를 헤더 높이만큼 내리고(scroll-padding-top)
+            (2) 섹션 높이도 그만큼 빼서 딱 한 화면에 들어맞게 한다. */
   .block {
-    min-height: 100svh;
+    min-height: calc(100svh - var(--header-h) - 1px); /* -1px = 헤더 하단 보더 */
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-block: clamp(72px, 10vh, 120px) clamp(24px, 5vh, 56px);
+    padding-block: clamp(16px, 3vh, 40px);
     scroll-snap-align: start;
-    scroll-snap-stop: always;
+    scroll-snap-stop: always; /* 한 번에 여러 화면 건너뛰지 않게 */
   }
 
-  /* 분류 제목 줄 — 제목 + 개수 */
+  /* 분류 제목 줄 — 제목 + 개수, 중앙 정렬 */
   .block__head {
     display: flex;
     align-items: baseline;
     justify-content: center;
     gap: 12px;
-    padding-bottom: clamp(14px, 2vh, 24px);
+    padding-bottom: clamp(12px, 1.8vh, 22px);
     border-bottom: 1px solid var(--line);
-    margin-bottom: clamp(18px, 3vh, 32px);
+    margin-bottom: clamp(16px, 2.6vh, 30px);
+  }
+  .block__h {
+    margin: 0;
+    font-weight: 600;
   }
   .block__title {
     font-size: clamp(24px, 3.6vw, 44px);
@@ -135,17 +115,17 @@ const sections = webSubs.map((s) => {
     color: var(--muted);
   }
 
-  /* 컨텐츠 크게 — 카드 이미지 높이를 화면 비율로 */
+  /* 컨텐츠 크게 — 카드 이미지 높이를 화면 높이에 맞춰 */
   .block__grid {
     padding-bottom: 0;
   }
   .block__grid :global(.card__media) {
     aspect-ratio: auto;
-    height: clamp(240px, 52vh, 620px);
+    height: clamp(200px, 44vh, 540px);
   }
   .block__grid :global(.card__meta) {
     text-align: center;
-    padding-top: 16px;
+    padding-top: 14px;
   }
   .block__grid :global(.card__title) {
     font-size: clamp(16px, 1.5vw, 20px);
@@ -154,14 +134,14 @@ const sections = webSubs.map((s) => {
   .block__empty {
     text-align: center;
     margin: 0;
-    padding: clamp(28px, 5vw, 52px) 0;
+    padding: clamp(28px, 6vh, 60px) 0;
     color: var(--muted);
     font-size: 15px;
   }
 
   /* 더 보기 — 테두리 없이 텍스트 + 아래 화살표만 */
   .block__more {
-    margin-top: clamp(18px, 3vh, 32px);
+    margin-top: clamp(16px, 2.6vh, 30px);
     text-align: center;
   }
   .more-btn {
@@ -198,11 +178,13 @@ const sections = webSubs.map((s) => {
 </style>
 
 <style is:global>
-  /* 스냅 컨테이너 — /web 에서만 적용된다 (이 CSS는 이 페이지에서만 로드) */
+  /* 스냅 컨테이너 — 이 CSS는 /web 에서만 로드된다 */
   html {
     scroll-snap-type: y mandatory;
+    /* 스티키 헤더(72px + 보더 1px)에 가려지지 않도록 스냅 기준선을 그 아래로 */
+    scroll-padding-top: calc(var(--header-h) + 1px);
   }
-  /* 마지막 화면 다음의 푸터도 스냅 지점으로 */
+  /* 푸터도 스냅 지점으로 두어 마지막 화면 뒤가 어정쩡하게 걸리지 않게 */
   .site-footer {
     scroll-snap-align: start;
   }
