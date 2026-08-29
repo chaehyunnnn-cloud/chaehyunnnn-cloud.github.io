@@ -114,6 +114,8 @@ export const projects: Project[] = [
     category: 'photography',
     title: { ko: 'PDRN essence', en: 'PDRN essence' },
     cover: '/images/photography/PDRNessence/DSC01553-2-3.jpg',
+    // 카드 썸네일: make-thumbs가 자동 생성한 900px 버전을 씀 (원본 2000px보다 가벼움)
+    thumb: '/thumbs/photography/PDRNessence/DSC01654-22.jpg',
     year: '2026',
     client: { ko: 'IZEZE', en: 'IZEZE' },
     role: { ko: '촬영 · 보정', en: 'Photography · Retouch' },
