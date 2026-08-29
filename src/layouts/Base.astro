@@ -10,9 +10,11 @@ interface Props {
   active?: string;
   /** 헤더/푸터 숨김 (전체화면 콜라주 홈 등) */
   hideChrome?: boolean;
+  /** 'dark' 면 검은 배경 + 흰 텍스트 (색 토큰만 바뀌고 레이아웃은 동일) */
+  theme?: "dark";
 }
 
-const { title, description, active, hideChrome } = Astro.props;
+const { title, description, active, hideChrome, theme } = Astro.props;
 const siteName = "chaehyeon"; // ← 사이트/작가 이름. 여기만 바꾸면 헤더·푸터 전체 반영.
 const fullTitle = title ? `${title} — ${siteName}` : siteName;
 const base = import.meta.env.BASE_URL;
@@ -49,7 +51,7 @@ const year = new Date().getFullYear();
     {/* 페이지 전환 애니메이션 (사진 → 상세 이미지 확대 morph) */}
     <ViewTransitions />
   </head>
-  <body>
+  <body class={theme === "dark" ? "theme-dark" : undefined}>
     {!hideChrome && (
     <header class="site-header">
       <div class="wrap site-header__inner">
