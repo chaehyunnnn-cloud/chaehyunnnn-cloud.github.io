@@ -1,6 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
-import { categories, projectsByCategory } from "../data/portfolio";
+import { categories, projectsByCategory, subsOf, subPath } from "../data/portfolio";
 import { thumb } from "../lib/img";
 const base = import.meta.env.BASE_URL;
 
@@ -46,14 +46,52 @@ const cards = categories.map((c, i) => {
             <a href={base}><span data-ko>홈</span><span data-en>Home</span></a>
           </li>
           {
-            categories.map((c) => (
-              <li>
-                <a href={`${base}${c.id}`}>
-                  <span data-ko>{c.label.ko}</span>
-                  <span data-en>{c.label.en}</span>
-                </a>
-              </li>
-            ))
+            categories.map((c) => {
+              const subs = subsOf(c.id);
+              return (
+                <li class={subs.length ? "has-sub" : undefined}>
+                  <div class="menu__row">
+                    <a href={`${base}${c.id}`}>
+                      <span data-ko>{c.label.ko}</span>
+                      <span data-en>{c.label.en}</span>
+                    </a>
+                    {subs.length > 0 && (
+                      <button
+                        class="menu__caret"
+                        type="button"
+                        aria-expanded="false"
+                        aria-label={`${c.label.en} sub categories`}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path
+                            d="M6 9l6 6 6-6"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  {subs.length > 0 && (
+                    <div class="menu__subwrap">
+                      <ul class="menu__sub">
+                        {subs.map((sb) => (
+                          <li>
+                            <a href={`${base}${subPath(c.id, sb.id)}`}>
+                              <span data-ko>{sb.label.ko}</span>
+                              <span data-en>{sb.label.en}</span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </li>
+              );
+            })
           }
         </ul>
       </nav>
@@ -291,7 +329,7 @@ const cards = categories.map((c, i) => {
     position: absolute;
     top: 52px;
     left: 0;
-    min-width: 210px;
+    min-width: 248px;
     list-style: none;
     margin: 0;
     padding: 10px;
@@ -320,6 +358,59 @@ const cards = categories.map((c, i) => {
     transition: background-color 0.15s ease;
   }
   .menu__list a:hover { background: #f2f2f2; }
+
+  /* 하위 분류가 있는 항목: [링크] ─── [▾ 화살표] 한 줄 배치 */
+  .menu__row {
+    display: flex;
+    align-items: center;
+  }
+  .menu__row > a { flex: 1; min-width: 0; }
+
+  .menu__caret {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    margin-right: 4px;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #111;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.15s ease, transform 0.26s var(--ease, ease);
+  }
+  .menu__caret svg { width: 17px; height: 17px; display: block; }
+  .menu__caret:hover { background: #f2f2f2; }
+  .has-sub.open > .menu__row > .menu__caret { transform: rotate(180deg); }
+
+  /* 접힘/펼침: grid-template-rows 0fr→1fr 로 높이 자동 애니메이션 */
+  .menu__subwrap {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.26s ease;
+  }
+  .has-sub.open > .menu__subwrap { grid-template-rows: 1fr; }
+
+  .menu__sub {
+    overflow: hidden;
+    min-height: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    visibility: hidden;
+    transition: visibility 0.26s;
+  }
+  .has-sub.open > .menu__subwrap > .menu__sub { visibility: visible; }
+
+  .menu__sub a {
+    padding: 8px 14px 8px 28px;
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    color: #666;
+  }
+  .menu__sub a:hover { color: #111; }
 
   .window__top {
     margin-top: clamp(22px, 4vw, 44px);
@@ -609,15 +700,38 @@ const cards = categories.map((c, i) => {
     const menu = btn.closest(".menu") as HTMLElement | null;
     if (!menu || menu.dataset.ready === "1") return;
     menu.dataset.ready = "1";
+    // 열려 있는 하위 분류를 모두 접는다 (메뉴가 닫힐 때 상태 초기화)
+    const collapseSubs = () => {
+      menu.querySelectorAll(".has-sub.open").forEach((li) => {
+        li.classList.remove("open");
+        li.querySelector(".menu__caret")?.setAttribute("aria-expanded", "false");
+      });
+    };
+
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const open = menu.classList.toggle("open");
       btn.setAttribute("aria-expanded", String(open));
+      if (!open) collapseSubs();
     });
+
+    // ▾ 화살표: 링크 이동 없이 하위 분류만 펼치기/접기
+    menu.querySelectorAll<HTMLButtonElement>(".menu__caret").forEach((caret) => {
+      caret.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const li = caret.closest(".has-sub") as HTMLElement | null;
+        if (!li) return;
+        const open = li.classList.toggle("open");
+        caret.setAttribute("aria-expanded", String(open));
+      });
+    });
+
     document.addEventListener("click", (e) => {
       if (!menu.contains(e.target as Node)) {
         menu.classList.remove("open");
         btn.setAttribute("aria-expanded", "false");
+        collapseSubs();
       }
     });
   }

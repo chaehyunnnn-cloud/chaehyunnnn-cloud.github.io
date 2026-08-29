@@ -30,6 +30,16 @@ export type PhotoSubId = (typeof photoSubs)[number]['id'];
 /** 사진 항목에 sub가 없으면 이 값으로 간주 */
 export const DEFAULT_PHOTO_SUB: PhotoSubId = 'product';
 
+/** '웹디자인' 카테고리의 하위 분류. 순서가 화면 순서. */
+export const webSubs = [
+  { id: 'product-detail', label: { ko: '제품 상세페이지', en: 'Product Detail Page' } },
+  { id: 'promotion', label: { ko: '프로모션 페이지', en: 'Promotion Page' } },
+  { id: 'ui', label: { ko: 'UI 디자인', en: 'UI Design' } },
+  { id: 'social', label: { ko: '소셜미디어 콘텐츠', en: 'Social Media Content' } },
+] as const satisfies ReadonlyArray<{ id: string; label: L10n }>;
+
+export type WebSubId = (typeof webSubs)[number]['id'];
+
 /** 상세 페이지의 본문 블록. 텍스트/이미지/영상 자유롭게 조합 */
 export type Block =
   | { type: 'text'; value: L10n }
@@ -43,8 +53,11 @@ export type Project = {
   /** URL에 쓰이는 고유 값 (영문/숫자/하이픈). 예: /work/seoul-rooftop */
   slug: string;
   category: CategoryId;
-  /** category가 'photography'일 때만 사용하는 하위 분류 (없으면 제품사진) */
-  sub?: PhotoSubId;
+  /**
+   * 하위 분류. category가 'photography'면 PhotoSubId(없으면 제품사진),
+   * 'web'이면 WebSubId(없으면 어느 하위 분류에도 안 들어감).
+   */
+  sub?: PhotoSubId | WebSubId;
   title: L10n;
   /** 상세 페이지 상단의 대표(큰) 이미지 — 원본 큰 사진 (public/ 기준 경로 또는 외부 URL) */
   cover: string;
@@ -394,4 +407,29 @@ export function projectsByPhotoSub(subId: string): Project[] {
   return projects.filter(
     (p) => p.category === 'photography' && (p.sub ?? DEFAULT_PHOTO_SUB) === subId
   );
+}
+
+export function webSubById(id: string) {
+  return webSubs.find((s) => s.id === id);
+}
+
+/** 웹디자인 카테고리에서 특정 하위분류의 작업들 (sub 지정된 항목만) */
+export function projectsByWebSub(subId: string): Project[] {
+  return projects.filter((p) => p.category === 'web' && p.sub === subId);
+}
+
+/** 카테고리의 하위 분류 목록 (없으면 빈 배열) — 햄버거 메뉴 등 공용 */
+export function subsOf(catId: string): ReadonlyArray<{ id: string; label: L10n }> {
+  if (catId === 'photography') return photoSubs;
+  if (catId === 'web') return webSubs;
+  return [];
+}
+
+/**
+ * 하위 분류 페이지 경로 (BASE_URL 제외).
+ * 사진의 'product'만 /photography(index)가 담당하므로 예외 처리.
+ */
+export function subPath(catId: string, subId: string): string {
+  if (catId === 'photography' && subId === DEFAULT_PHOTO_SUB) return 'photography';
+  return `${catId}/${subId}`;
 }
