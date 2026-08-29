@@ -17,7 +17,7 @@ const sections = webSubs.map((s) => {
 ---
 
 <Base title={cat.label.ko} active="web">
-  <section class="wrap page-head">
+  <section class="wrap page-head page-head--center">
     <h1>
       <span data-ko>{cat.label.ko}</span>
       <span data-en>{cat.label.en}</span>
@@ -64,6 +64,11 @@ const sections = webSubs.map((s) => {
 </Base>
 
 <style>
+  /* 웹디자인 메인은 제목·컨텐츠 모두 중앙 정렬 */
+  .page-head--center {
+    text-align: center;
+  }
+
   .block {
     padding-bottom: clamp(56px, 9vw, 110px);
   }
@@ -72,6 +77,7 @@ const sections = webSubs.map((s) => {
   .block__head {
     display: flex;
     align-items: baseline;
+    justify-content: center;
     gap: 12px;
     padding-bottom: clamp(16px, 2.5vw, 28px);
     border-bottom: 1px solid var(--line);
@@ -108,8 +114,13 @@ const sections = webSubs.map((s) => {
   .block__grid {
     padding-bottom: 0;
   }
+  /* 카드 아래 제목·요약도 중앙 (이 페이지 한정) */
+  .block__grid :global(.card__meta) {
+    text-align: center;
+  }
 
   .block__empty {
+    text-align: center;
     margin: 0;
     padding: clamp(28px, 5vw, 52px) 0;
     color: var(--muted);
@@ -118,6 +129,7 @@ const sections = webSubs.map((s) => {
 
   .block__more {
     margin-top: clamp(20px, 3vw, 34px);
+    text-align: center;
   }
   .more-btn {
     display: inline-block;

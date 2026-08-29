@@ -16,7 +16,7 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <Base title={cur.label.ko} active="web">
-  <section class="wrap page-head">
+  <section class="wrap page-head page-head--center">
     <h1>
       <span data-ko>{cur.label.ko}</span>
       <span data-en>{cur.label.en}</span>
@@ -53,9 +53,18 @@ const base = import.meta.env.BASE_URL;
 </Base>
 
 <style>
+  /* 웹디자인은 제목·컨텐츠 모두 중앙 정렬 (메인 /web 과 동일) */
+  .page-head--center {
+    text-align: center;
+  }
+  .grid :global(.card__meta) {
+    text-align: center;
+  }
+
   .subnav {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 6px 18px;
     margin-top: 14px;
   }
