@@ -65,6 +65,8 @@ const sections = webSubs.map((s) => {
      그래서 (1) 스냅 위치를 헤더 높이만큼 내리고(scroll-padding-top)
             (2) 섹션 높이도 그만큼 빼서 딱 한 화면에 들어맞게 한다. */
   .block {
+    /* .wrap의 1280px보다 넓게 — 카드 3장이 화면을 채우도록 (1920에서 약 90%) */
+    max-width: min(1720px, 94vw);
     min-height: calc(100svh - var(--header-h) - 1px); /* -1px = 헤더 하단 보더 */
     display: flex;
     flex-direction: column;
@@ -118,10 +120,15 @@ const sections = webSubs.map((s) => {
   /* 컨텐츠 크게 — 카드 이미지 높이를 화면 높이에 맞춰 */
   .block__grid {
     padding-bottom: 0;
+    gap: clamp(16px, 1.8vw, 32px);
   }
+  /* 이미지 높이:
+     · 기본은 화면 높이의 54%
+     · 단 제목·더보기 등 고정 높이 요소(약 380px)를 빼고 남는 만큼을 넘지 않게 min()으로 제한
+       → 세로가 짧은 노트북에서도 한 화면 안에 그대로 들어간다 */
   .block__grid :global(.card__media) {
     aspect-ratio: auto;
-    height: clamp(200px, 44vh, 540px);
+    height: clamp(180px, min(54vh, 100svh - 380px), 660px);
   }
   .block__grid :global(.card__meta) {
     text-align: center;
